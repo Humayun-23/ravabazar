@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env
+__pycache__/
+.pytest_cache/
+.venv/
+postgres_data/
+logs/
+.DS_Store
