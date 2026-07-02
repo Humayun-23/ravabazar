@@ -15,3 +15,4 @@ from .coupons import Coupon
 from .banners import Banner
 from .settings import Setting
 from .admins import Admin
+from .inventory import Inventory
