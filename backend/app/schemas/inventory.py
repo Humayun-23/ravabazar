@@ -22,6 +22,13 @@ class InventoryUpdate(BaseModel):
     reserved_quantity: Optional[int] = None
     low_stock_threshold: Optional[int] = None
 
+    @field_validator('stock_quantity', 'reserved_quantity', 'low_stock_threshold')
+    @classmethod
+    def check_non_negative(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Quantity must be greater than or equal to 0')
+        return v
+
 class InventoryInDBBase(InventoryBase):
     id: int
     product_id: int

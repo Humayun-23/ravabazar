@@ -7,7 +7,6 @@ class AdminBase(BaseModel):
     first_name: Optional[str] = Field(None, max_length=100)
     last_name: Optional[str] = Field(None, max_length=100)
     role: Optional[str] = Field("manager", max_length=50)
-    department: Optional[str] = Field("staff", max_length=100)
     is_active: Optional[bool] = True
 
 class AdminCreate(AdminBase):

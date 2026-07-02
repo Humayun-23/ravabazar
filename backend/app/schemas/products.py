@@ -49,6 +49,20 @@ class ProductUpdate(BaseModel):
     status: Optional[ProductStatus] = None
     is_featured: Optional[bool] = None
 
+    @field_validator('sku')
+    @classmethod
+    def uppercase_sku(cls, v):
+        if v:
+            return v.strip().upper()
+        return v
+
+    @field_validator('price', 'sale_price')
+    @classmethod
+    def check_positive(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Price must be greater than or equal to 0')
+        return v
+
 class ProductInDBBase(ProductBase):
     id: int
     created_at: datetime
