@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class AddressBase(BaseModel):
-    title: Optional[str] = Field(None, max_length=100)
+    title: Optional[str] = Field("home", max_length=100)
     street_address: str = Field(..., max_length=255)
     city: str = Field(..., max_length=100)
     state: str = Field(..., max_length=100)

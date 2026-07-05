@@ -1,4 +1,5 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -6,6 +7,7 @@ from app.api.v1.router import api_router
 from app.api.v1.health import build_health_response
 from app.core.config import settings
 from app.core.dependencies import get_db
+from app.core.errors import http_exception_handler, validation_exception_handler
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -21,6 +23,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
 @app.get("/health")

@@ -17,3 +17,9 @@ Planned tables:
 * banners
 * settings
 * audit_logs
+
+## Notes
+- **SKU** is stored on `products`.
+- **Inventory** is stored in a separate `inventory` table.
+- One product has one inventory record in MVP.
+- `available_stock = stock_quantity - reserved_quantity` (not stored, calculated dynamically).
