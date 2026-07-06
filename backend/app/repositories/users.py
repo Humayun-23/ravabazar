@@ -33,3 +33,11 @@ class UserRepository:
         self.db.flush()
         self.db.refresh(user)
         return user
+
+    def update(self, user: User, update_data: dict) -> User:
+        for key, value in update_data.items():
+            setattr(user, key, value)
+        self.db.add(user)
+        self.db.flush()
+        self.db.refresh(user)
+        return user

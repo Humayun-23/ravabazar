@@ -5,8 +5,8 @@ from pydantic import ValidationError
 
 from app.schemas.addresses import AddressCreate
 from app.schemas.admins import AdminCreate
-from app.schemas.cart_items import CartItemCreate
-from app.schemas.carts import CartCreate
+from app.schemas.cart_items import CartItemAddRequest
+from app.schemas.carts import CartMergeRequest
 from app.schemas.categories import CategoryCreate
 from app.schemas.coupons import CouponCreate
 from app.schemas.order_items import OrderItemCreate
@@ -62,16 +62,16 @@ def test_address_schema_requires_address_snapshot_source_fields():
     assert address.is_default is False
 
 
-def test_cart_schema_supports_guest_session_cart():
-    cart = CartCreate(session_id="guest-session")
+def test_cart_merge_schema_accepts_guest_session_id():
+    cart = CartMergeRequest(session_id="guest-session")
 
-    assert cart.user_id is None
     assert cart.session_id == "guest-session"
 
 
-def test_cart_item_schema_defaults_quantity_to_one():
-    item = CartItemCreate(cart_id=1, product_id=2)
+def test_cart_item_add_schema_defaults_quantity_to_one():
+    item = CartItemAddRequest(product_id=2)
 
+    assert item.product_id == 2
     assert item.quantity == 1
 
 

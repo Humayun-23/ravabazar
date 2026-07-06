@@ -193,6 +193,19 @@ def test_admin_login_and_refresh_are_separate_from_customer_tokens(client, db_se
     assert rejected_response.status_code == 401
 
 
+    admin_logout_response = client.post(
+        "/api/v1/admin/auth/logout",
+        headers={"Authorization": f"Bearer {admin_tokens['access_token']}"},
+    )
+    assert admin_logout_response.status_code == 204
+
+    admin_revoked_refresh = client.post(
+        "/api/v1/admin/auth/refresh",
+        json={"refresh_token": admin_tokens["refresh_token"]},
+    )
+    assert admin_revoked_refresh.status_code == 401
+
+
 def test_admin_login_rejects_inactive_admin(client, db_session):
     admin = Admin(
         email="inactive@example.com",

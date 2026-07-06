@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_db
+from app.core.dependencies import get_current_admin, get_db
 from app.schemas.auth import (
     AccessTokenResponse,
     AdminAuthResponse,
@@ -34,3 +34,17 @@ def refresh_admin_token(
         refresh_token=payload.refresh_token,
         subject_type="admin",
     )
+
+
+@router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout_admin(
+    response: Response,
+    current_admin=Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    AuthService(db).logout_subject(
+        subject_type="admin",
+        subject_id=current_admin.id,
+    )
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return None

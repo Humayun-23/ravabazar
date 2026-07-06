@@ -1,18 +1,14 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
-from .cart_items import CartItem
+from .cart_items import CartItemPublic
 
 class CartBase(BaseModel):
     user_id: Optional[int] = None
     session_id: Optional[str] = Field(None, max_length=255)
 
-class CartCreate(CartBase):
-    pass
-
-class CartUpdate(BaseModel):
-    user_id: Optional[int] = None
-    session_id: Optional[str] = Field(None, max_length=255)
+class CartMergeRequest(BaseModel):
+    session_id: str
 
 class CartInDBBase(CartBase):
     id: int
@@ -22,5 +18,12 @@ class CartInDBBase(CartBase):
     class Config:
         from_attributes = True
 
-class Cart(CartInDBBase):
-    items: List[CartItem] = []
+class CartPublic(BaseModel):
+    id: int
+    user_id: Optional[int]
+    session_id: Optional[str]
+    items: List[CartItemPublic] = []
+    subtotal: float
+
+    class Config:
+        from_attributes = True

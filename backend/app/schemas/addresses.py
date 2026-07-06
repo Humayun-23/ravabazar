@@ -11,6 +11,9 @@ class AddressBase(BaseModel):
     country: str = Field(..., max_length=100)
     is_default: Optional[bool] = False
 
+class CustomerAddressCreate(AddressBase):
+    pass
+
 class AddressCreate(AddressBase):
     user_id: int
 

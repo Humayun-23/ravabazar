@@ -20,6 +20,11 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
     password: Optional[str] = None
 
+class UserProfileUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = Field(None, max_length=100)
+    last_name: Optional[str] = Field(None, max_length=100)
+
 class UserInDBBase(UserBase):
     id: int
     created_at: datetime

@@ -10,6 +10,14 @@ class ProductImageBase(BaseModel):
 class ProductImageCreate(ProductImageBase):
     product_id: int
 
+class ProductImageBasic(BaseModel):
+    id: int
+    image_url: str
+    alt_text: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class ProductImageUpdate(BaseModel):
     image_url: Optional[str] = Field(None, max_length=500)
     alt_text: Optional[str] = Field(None, max_length=255)

@@ -2,7 +2,8 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 import enum
-from .product_images import ProductImage
+from .product_images import ProductImage, ProductImageBasic
+from .categories import CategoryBasic
 
 class ProductStatus(str, enum.Enum):
     draft = "draft"
@@ -73,3 +74,46 @@ class ProductInDBBase(ProductBase):
 
 class Product(ProductInDBBase):
     images: List[ProductImage] = []
+
+class ProductPublic(BaseModel):
+    id: int
+    name: str
+    slug: str
+    sku: str
+    description: Optional[str] = None
+    price: float
+    sale_price: Optional[float] = None
+    status: ProductStatus
+    is_featured: bool
+    category: Optional[CategoryBasic] = None
+    primary_image: Optional[ProductImageBasic] = None
+    available_stock: int
+
+    class Config:
+        from_attributes = True
+
+class ProductListResponse(BaseModel):
+    items: List[ProductPublic]
+    page: int
+    page_size: int
+    total: int
+    total_pages: int
+
+class ProductDetailPublic(BaseModel):
+    id: int
+    name: str
+    slug: str
+    sku: str
+    description: Optional[str] = None
+    price: float
+    sale_price: Optional[float] = None
+    status: ProductStatus
+    is_featured: bool
+    category: Optional[CategoryBasic] = None
+    images: List[ProductImageBasic] = []
+    available_stock: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

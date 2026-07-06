@@ -84,6 +84,17 @@ def test_core_unique_columns_are_declared():
     assert Setting.__table__.c.key.unique is True
 
 
+def test_cart_identity_and_item_uniqueness_are_declared():
+    cart_index_names = {index.name for index in Cart.__table__.indexes}
+    cart_item_constraint_names = {
+        constraint.name for constraint in CartItem.__table__.constraints
+    }
+
+    assert "ix_carts_unique_user_id" in cart_index_names
+    assert "ix_carts_unique_session_id" in cart_index_names
+    assert "uq_cart_items_cart_id_product_id" in cart_item_constraint_names
+
+
 def test_relationships_keep_child_records_owned_by_parent():
     assert "delete-orphan" in Product.images.property.cascade
     assert "delete-orphan" in Product.inventory.property.cascade
