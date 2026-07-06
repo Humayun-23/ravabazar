@@ -11,7 +11,9 @@ from app.models.products import ProductStatus
 from app.repositories.addresses import AddressRepository
 from app.repositories.carts import CartRepository
 from app.repositories.orders import OrderRepository
+from app.repositories.coupons import CouponRepository
 from app.schemas.orders import CheckoutRequest, OrderListResponse
+from datetime import datetime
 
 
 ONLINE_PAYMENT_METHODS = {"razorpay", "cashfree"}
@@ -30,6 +32,7 @@ class OrderService:
         self.addresses = AddressRepository(db)
         self.carts = CartRepository(db)
         self.orders = OrderRepository(db)
+        self.coupons = CouponRepository(db)
 
     def checkout(
         self,
@@ -65,11 +68,35 @@ class OrderService:
                 detail="Unsupported payment method.",
             )
 
+        coupon = None
         if payload.coupon_code:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Coupons are not available for checkout yet.",
-            )
+            coupon = self.coupons.get_by_code(payload.coupon_code)
+            if not coupon:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Coupon not found.",
+                )
+            if not coupon.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Coupon is not active.",
+                )
+            now = datetime.utcnow()
+            if coupon.valid_from and now < coupon.valid_from:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Coupon is not valid yet.",
+                )
+            if coupon.valid_until and now > coupon.valid_until:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Coupon has expired.",
+                )
+            if coupon.usage_limit > 0 and coupon.usage_count >= coupon.usage_limit:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Coupon usage limit reached.",
+                )
 
         address = self.addresses.get_by_id_and_user(payload.address_id, user_id)
         if not address:
@@ -120,15 +147,32 @@ class OrderService:
                 }
             )
 
+        if coupon and total_amount < coupon.min_order_value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Minimum order value of {coupon.min_order_value} required for this coupon.",
+            )
+
+        discount_amount = 0.0
+        if coupon:
+            if coupon.discount_type == "percentage":
+                discount_amount = total_amount * (coupon.discount_value / 100.0)
+            elif coupon.discount_type == "fixed":
+                discount_amount = coupon.discount_value
+            # Ensure discount doesn't exceed total_amount
+            discount_amount = min(total_amount, discount_amount)
+
         shipping_fee = 0.0
         tax = 0.0
-        final_amount = total_amount + shipping_fee + tax
+        final_amount = max(0, total_amount - discount_amount + shipping_fee + tax)
         order_status = "cod_pending" if payment_method == "cod" else "pending_payment"
 
         order = self.orders.create(
             user_id=user_id,
             address_snapshot=self._address_snapshot(address),
             total_amount=total_amount,
+            discount_amount=discount_amount,
+            coupon_code=coupon.code if coupon else None,
             shipping_fee=shipping_fee,
             tax=tax,
             final_amount=final_amount,
@@ -137,6 +181,10 @@ class OrderService:
             idempotency_key=idempotency_key,
             idempotency_request_hash=request_hash,
         )
+
+        if coupon:
+            coupon.usage_count += 1
+            self.db.add(coupon)
 
         for item in prepared_items:
             product = item["product"]
@@ -198,6 +246,12 @@ class OrderService:
                     0,
                     item.product.inventory.reserved_quantity - item.quantity,
                 )
+
+        if order.coupon_code:
+            coupon = self.coupons.get_by_code(order.coupon_code)
+            if coupon:
+                coupon.usage_count = max(0, coupon.usage_count - 1)
+                self.db.add(coupon)
 
         order.status = "cancelled"
         self.db.add(order)

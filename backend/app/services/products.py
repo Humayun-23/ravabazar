@@ -40,37 +40,7 @@ class ProductService:
 
         items_pydantic = []
         for item in items_orm:
-            # Find primary image
-            primary_image = None
-            for img in item.images:
-                if img.is_primary:
-                    primary_image = ProductImageBasic.model_validate(img)
-                    break
-            if not primary_image and item.images:
-                primary_image = ProductImageBasic.model_validate(item.images[0])
-            
-            # Format category
-            category = None
-            if item.category:
-                category = CategoryBasic.model_validate(item.category)
-            
-            # Stock
-            available_stock = item.inventory.available_stock if item.inventory else 0
-
-            product_public = ProductPublic(
-                id=item.id,
-                name=item.name,
-                slug=item.slug,
-                sku=item.sku,
-                description=item.description,
-                price=item.price,
-                sale_price=item.sale_price,
-                status=item.status,
-                is_featured=item.is_featured,
-                category=category,
-                primary_image=primary_image,
-                available_stock=available_stock
-            )
+            product_public = self._format_product_public(item)
             items_pydantic.append(product_public)
 
         total_pages = math.ceil(total / page_size) if total > 0 else 1
@@ -88,6 +58,42 @@ class ProductService:
         if not item:
             raise HTTPException(status_code=404, detail="Product not found or inactive")
         
+        return self._format_product_detail(item)
+        
+    def _format_product_public(self, item) -> ProductPublic:
+        # Find primary image
+        primary_image = None
+        for img in item.images:
+            if img.is_primary:
+                primary_image = ProductImageBasic.model_validate(img)
+                break
+        if not primary_image and item.images:
+            primary_image = ProductImageBasic.model_validate(item.images[0])
+        
+        # Format category
+        category = None
+        if item.category:
+            category = CategoryBasic.model_validate(item.category)
+        
+        # Stock
+        available_stock = item.inventory.available_stock if item.inventory else 0
+
+        return ProductPublic(
+            id=item.id,
+            name=item.name,
+            slug=item.slug,
+            sku=item.sku,
+            description=item.description,
+            price=item.price,
+            sale_price=item.sale_price,
+            status=item.status,
+            is_featured=item.is_featured,
+            category=category,
+            primary_image=primary_image,
+            available_stock=available_stock
+        )
+        
+    def _format_product_detail(self, item) -> ProductDetailPublic:
         # Format images
         images = [ProductImageBasic.model_validate(img) for img in item.images]
 

@@ -28,7 +28,7 @@ def resolve_cart_identity(
         )
     return None, x_cart_session
 
-@router.get("/", response_model=CartPublic)
+@router.get("", response_model=CartPublic)
 def get_cart(
     identity: tuple = Depends(resolve_cart_identity),
     db: Session = Depends(get_db)

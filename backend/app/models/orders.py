@@ -24,6 +24,8 @@ class Order(Base):
     )
     
     total_amount = Column(Float, nullable=False)
+    discount_amount = Column(Float, default=0.0)
+    coupon_code = Column(String(50), nullable=True)
     shipping_fee = Column(Float, default=0.0)
     tax = Column(Float, default=0.0)
     final_amount = Column(Float, nullable=False)

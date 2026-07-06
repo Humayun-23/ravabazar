@@ -9,6 +9,8 @@ class OrderBase(BaseModel):
     user_id: int
     address_snapshot: Any
     total_amount: float
+    discount_amount: Optional[float] = 0.0
+    coupon_code: Optional[str] = Field(None, max_length=50)
     shipping_fee: Optional[float] = 0.0
     tax: Optional[float] = 0.0
     final_amount: float

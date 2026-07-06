@@ -11,7 +11,7 @@ from app.schemas.categories import CategoryCreate
 from app.schemas.coupons import CouponCreate
 from app.schemas.order_items import OrderItemCreate
 from app.schemas.orders import OrderCreate
-from app.schemas.payments import PaymentCreate
+from app.schemas.payments import PaymentCreate, PaymentCreateOrderRequest, PaymentVerifyRequest
 from app.schemas.shipments import ShipmentCreate
 from app.schemas.users import UserCreate
 
@@ -113,6 +113,20 @@ def test_payment_schema_defaults_to_pending():
     payment = PaymentCreate(order_id=1, provider="COD", amount=100.0)
 
     assert payment.status == "pending"
+
+
+def test_payment_request_schemas_accept_provider_details():
+    create_order = PaymentCreateOrderRequest(order_id=1, provider="razorpay")
+    verify = PaymentVerifyRequest(
+        order_id=1,
+        provider="razorpay",
+        provider_order_id="order_provider_123",
+        provider_payment_id="pay_provider_123",
+        signature="signature",
+    )
+
+    assert create_order.provider == "razorpay"
+    assert verify.provider_payment_id == "pay_provider_123"
 
 
 def test_shipment_schema_defaults_to_processing():

@@ -23,8 +23,43 @@ class ProductRepository:
         sort_by: str = "newest",
         sort_order: str = "desc"
     ) -> Tuple[List[Product], int]:
+        return self._get_products(
+            page, page_size, search, category_slug, min_price, max_price, is_featured, sort_by, sort_order, False
+        )
         
-        query = self.db.query(Product).filter(Product.status == ProductStatus.active)
+    def get_admin_products(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        search: Optional[str] = None,
+        category_slug: Optional[str] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        is_featured: Optional[bool] = None,
+        sort_by: str = "newest",
+        sort_order: str = "desc"
+    ) -> Tuple[List[Product], int]:
+        return self._get_products(
+            page, page_size, search, category_slug, min_price, max_price, is_featured, sort_by, sort_order, True
+        )
+        
+    def _get_products(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        search: Optional[str] = None,
+        category_slug: Optional[str] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        is_featured: Optional[bool] = None,
+        sort_by: str = "newest",
+        sort_order: str = "desc",
+        is_admin: bool = False
+    ) -> Tuple[List[Product], int]:
+        
+        query = self.db.query(Product)
+        if not is_admin:
+            query = query.filter(Product.status == ProductStatus.active)
 
         if category_slug:
             query = query.join(Product.category).filter(Category.slug == category_slug)
@@ -82,6 +117,15 @@ class ProductRepository:
             joinedload(Product.inventory),
             joinedload(Product.images)
         ).first()
+        
+    def get_product_by_slug_admin(self, slug: str) -> Optional[Product]:
+        return self.db.query(Product).filter(
+            Product.slug == slug
+        ).options(
+            joinedload(Product.category),
+            joinedload(Product.inventory),
+            joinedload(Product.images)
+        ).first()
 
     def get_product_by_id(self, product_id: int) -> Optional[Product]:
         return self.db.query(Product).filter(
@@ -90,3 +134,56 @@ class ProductRepository:
         ).options(
             joinedload(Product.inventory)
         ).first()
+
+    def get_product_by_id_admin(self, product_id: int) -> Optional[Product]:
+        return self.db.query(Product).filter(
+            Product.id == product_id
+        ).options(
+            joinedload(Product.category),
+            joinedload(Product.inventory),
+            joinedload(Product.images)
+        ).first()
+        
+    def create_product(self, product_data: dict, inventory_data: dict, images_data: List[dict]) -> Product:
+        new_product = Product(**product_data)
+        self.db.add(new_product)
+        self.db.flush() # flush to get ID
+        
+        new_inventory = Inventory(product_id=new_product.id, **inventory_data)
+        self.db.add(new_inventory)
+        
+        for img in images_data:
+            new_image = ProductImage(product_id=new_product.id, **img)
+            self.db.add(new_image)
+            
+        self.db.commit()
+        self.db.refresh(new_product)
+        return new_product
+        
+    def update_product(self, product: Product, product_data: dict, inventory_data: Optional[dict] = None, images_data: Optional[List[dict]] = None) -> Product:
+        for key, value in product_data.items():
+            setattr(product, key, value)
+            
+        if inventory_data is not None:
+            if product.inventory:
+                for key, value in inventory_data.items():
+                    setattr(product.inventory, key, value)
+            else:
+                new_inventory = Inventory(product_id=product.id, **inventory_data)
+                self.db.add(new_inventory)
+                
+        if images_data is not None:
+            # Delete old images
+            self.db.query(ProductImage).filter(ProductImage.product_id == product.id).delete()
+            # Add new images
+            for img in images_data:
+                new_image = ProductImage(product_id=product.id, **img)
+                self.db.add(new_image)
+                
+        self.db.commit()
+        self.db.refresh(product)
+        return product
+        
+    def delete_product(self, product: Product):
+        self.db.delete(product)
+        self.db.commit()

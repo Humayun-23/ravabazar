@@ -41,3 +41,30 @@ class UserRepository:
         self.db.flush()
         self.db.refresh(user)
         return user
+
+    def list_all(
+        self,
+        *,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+    ) -> tuple[list[User], int]:
+        query = self.db.query(User)
+        
+        if search:
+            search_filter = f"%{search}%"
+            query = query.filter(
+                (User.first_name.ilike(search_filter)) |
+                (User.last_name.ilike(search_filter)) |
+                (User.email.ilike(search_filter)) |
+                (User.phone.ilike(search_filter))
+            )
+            
+        total = query.count()
+        users = (
+            query.order_by(User.created_at.desc(), User.id.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+        return users, total
