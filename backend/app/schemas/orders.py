@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Any
 from datetime import datetime
 from .order_items import OrderItem
@@ -18,6 +18,22 @@ class OrderBase(BaseModel):
 class OrderCreate(OrderBase):
     pass
 
+
+class CheckoutRequest(BaseModel):
+    address_id: int
+    payment_method: str = Field(..., max_length=50)
+    coupon_code: Optional[str] = Field(None, max_length=50)
+
+    @field_validator("payment_method")
+    @classmethod
+    def normalize_payment_method(cls, value: str) -> str:
+        return value.lower()
+
+
+class OrderCancelRequest(BaseModel):
+    reason: Optional[str] = Field(None, max_length=500)
+
+
 class OrderUpdate(BaseModel):
     status: Optional[str] = Field(None, max_length=50)
 
@@ -33,3 +49,11 @@ class Order(OrderInDBBase):
     items: List[OrderItem] = []
     payment: Optional[Payment] = None
     shipment: Optional[Shipment] = None
+
+
+class OrderListResponse(BaseModel):
+    items: List[Order] = []
+    page: int
+    page_size: int
+    total: int
+    total_pages: int

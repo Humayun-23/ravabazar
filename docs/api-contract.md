@@ -696,13 +696,19 @@ Rules:
 
 ```text
 Require Idempotency-Key.
+Store Idempotency-Key and a request hash on the order for customer retry safety.
 Validate cart is not empty.
 Validate every product is active.
 Validate available stock for every item.
+Reserve stock by increasing inventory.reserved_quantity for each order item.
+Clear the customer's cart after successful order creation.
 For online payment, set status=pending_payment.
 For COD, set status=cod_pending.
 Do not mark online payment as paid here.
 Do not create duplicate orders when the same Idempotency-Key is retried.
+Reusing the same Idempotency-Key with a different request body returns 409.
+coupon_code is reserved for the coupon phase and is rejected until coupon checkout
+validation is implemented.
 ```
 
 ### `GET /api/v1/orders/my`
@@ -917,6 +923,18 @@ Only admin refresh tokens are accepted.
 Customer refresh tokens must be rejected.
 Inactive admins must be rejected.
 ```
+
+### `POST /api/v1/admin/auth/logout`
+
+Revoke the admin's token.
+
+Headers:
+
+```http
+Authorization: Bearer <admin_access_token>
+```
+
+Response `204`: empty body.
 
 ## Admin Dashboard
 
