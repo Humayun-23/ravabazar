@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminStore } from '@/store/adminStore';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 const ADMIN_LINKS = [
   { name: 'Dashboard', href: '/admin', icon: '📊' },

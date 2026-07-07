@@ -21,7 +21,7 @@ class CartRepository:
         return query.options(
             joinedload(Cart.items).joinedload(CartItem.product).joinedload(Product.images),
             joinedload(Cart.items).joinedload(CartItem.product).joinedload(Product.inventory)
-        ).first()
+        ).populate_existing().first()
 
     def create_cart(self, user_id: Optional[int] = None, session_id: Optional[str] = None) -> Cart:
         cart = Cart(user_id=user_id, session_id=session_id)

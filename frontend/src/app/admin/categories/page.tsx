@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { adminApi } from '@/services/api';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { CategoryWithChildren } from '@/types/catalog';
 
 export default function AdminCategoriesPage() {

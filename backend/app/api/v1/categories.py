@@ -14,7 +14,7 @@ router = APIRouter()
 def health_check():
     return {"status": "ok", "module": "categories"}
 
-@router.get("/", response_model=List[CategoryWithChildren])
+@router.get("", response_model=List[CategoryWithChildren])
 def get_categories(db: Session = Depends(get_db)):
     service = CategoryService(db)
     return service.get_categories()

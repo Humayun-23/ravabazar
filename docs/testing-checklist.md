@@ -31,3 +31,18 @@ Automated:
 * `GET /api/v1/orders/{id}` returns only the current customer's order.
 * `POST /api/v1/orders/{id}/cancel` cancels cancellable orders and releases
   reserved stock.
+
+## Payments
+
+Automated:
+
+* `POST /api/v1/payments/create-order` requires a customer access token.
+* `POST /api/v1/payments/create-order` only works for the current customer's
+  `pending_payment` online order.
+* Payment create-order responses use backend order totals, not frontend amounts.
+* `POST /api/v1/payments/verify` rejects invalid signatures without marking an
+  order paid.
+* `POST /api/v1/payments/verify` marks payment verified and order paid only
+  after valid signature verification.
+* `POST /api/v1/payments/webhook` rejects invalid signatures.
+* Valid webhooks are idempotent and can mark payment verified and order paid.

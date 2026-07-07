@@ -12,7 +12,7 @@ router = APIRouter()
 def health_check():
     return {"status": "ok", "module": "banners"}
 
-@router.get("/", response_model=List[Banner])
+@router.get("", response_model=List[Banner])
 def get_banners(db: Session = Depends(get_db)):
     service = BannerService(db)
     return service.get_banners()

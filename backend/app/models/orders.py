@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer, JSON, String
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer, JSON, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -18,8 +18,8 @@ class Order(Base):
             "user_id",
             "idempotency_key",
             unique=True,
-            postgresql_where=idempotency_key.isnot(None),
-            sqlite_where=idempotency_key.isnot(None),
+            postgresql_where=text("idempotency_key IS NOT NULL"),
+            sqlite_where=text("idempotency_key IS NOT NULL"),
         ),
     )
     

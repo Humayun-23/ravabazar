@@ -793,7 +793,9 @@ Rules:
 ```text
 Order must belong to current customer.
 Order status must be pending_payment.
+Order payment_method must match provider.
 Amount must be calculated from backend order totals.
+Payment provider public key must come from backend configuration.
 ```
 
 ### `POST /api/v1/payments/verify`
@@ -829,6 +831,8 @@ Rules:
 Backend must verify provider signature before marking payment verified.
 Frontend response alone must never mark an order paid.
 Successful verification may mark order paid, but webhook must still be supported.
+Razorpay/Cashfree verification uses HMAC-SHA256 over provider_order_id|provider_payment_id.
+Invalid signatures must not change payment or order status.
 ```
 
 ### `POST /api/v1/payments/webhook`
@@ -858,6 +862,7 @@ Webhook processing must be idempotent.
 On successful payment, update payment status and order status.
 On failure, update payment status and order status to failed where appropriate.
 Do not trust unauthenticated payload fields.
+Webhook signature verification uses HMAC-SHA256 over the raw request body.
 ```
 
 ## Admin Authentication
