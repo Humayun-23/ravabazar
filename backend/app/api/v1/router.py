@@ -6,7 +6,7 @@ from app.api.v1 import (
     admin_shipments, admin_users, admin_dashboard, admin_coupons,
     admin_banners, admin_settings, admin_inventory
 )
-from app.api.v1 import coupons
+from app.api.v1 import coupons, wishlists
 
 api_router = APIRouter()
 
@@ -34,3 +34,4 @@ api_router.include_router(admin_banners.router, prefix="/admin/banners", tags=["
 api_router.include_router(admin_settings.router, prefix="/admin/settings", tags=["admin-settings"])
 api_router.include_router(admin_inventory.router, prefix="/admin/inventory", tags=["admin-inventory"])
 api_router.include_router(banners.router, prefix="/banners", tags=["banners"])
+api_router.include_router(wishlists.router, prefix="/wishlists", tags=["wishlists"])

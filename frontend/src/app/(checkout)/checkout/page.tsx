@@ -10,12 +10,19 @@ import { Address } from '@/types/address';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Label } from '@/components/ui/label';
-import { MapPin, CreditCard, ArrowRight, CheckCircle, Package, Lock, X } from 'lucide-react';
+import { MapPin, CreditCard, ArrowRight, CheckCircle2, Package, Lock, X, Check, Building2, Home, Navigation, Map } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%2364748b'%3ENo Image%3C/text%3E%3C/svg%3E";
+
+const getAddressIcon = (title: string) => {
+  const t = title.toLowerCase();
+  if (t.includes('home')) return <Home className="w-5 h-5" />;
+  if (t.includes('work') || t.includes('office')) return <Building2 className="w-5 h-5" />;
+  return <Map className="w-5 h-5" />;
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -43,7 +50,6 @@ export default function CheckoutPage() {
     }
   };
 
-  // Protect route
   useEffect(() => {
     if (!isAuthenticated && typeof window !== 'undefined' && !localStorage.getItem('access_token')) {
       router.push('/login?redirect=/checkout');
@@ -59,7 +65,6 @@ export default function CheckoutPage() {
     enabled: isAuthenticated,
   });
 
-  // Set default address if available
   useEffect(() => {
     if (addresses.length > 0 && !selectedAddressId) {
       const defaultAddr = addresses.find(a => a.is_default);
@@ -80,7 +85,6 @@ export default function CheckoutPage() {
       }),
     }),
     onSuccess: (data) => {
-      // Clear cart locally (backend should have cleared it too)
       useCartStore.getState().fetchCart();
       setOrderSuccess(data.id);
     },
@@ -99,24 +103,24 @@ export default function CheckoutPage() {
   };
 
   if (!isAuthenticated && typeof window !== 'undefined' && !localStorage.getItem('access_token')) {
-    return null; // Don't render while redirecting
+    return null;
   }
 
   if (orderSuccess) {
     return (
-      <div className="container mx-auto px-4 max-w-2xl py-12 text-center">
-        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="w-10 h-10" />
+      <div className="container mx-auto px-4 max-w-lg py-20 text-center animate-in fade-in slide-in-from-bottom-8 duration-500">
+        <div className="w-24 h-24 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-sm">
+          <CheckCircle2 className="w-12 h-12" />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight mb-4">Order Placed Successfully!</h1>
-        <p className="text-muted-foreground mb-8 text-lg">
-          Thank you for your purchase. Your order #{orderSuccess} has been confirmed.
+        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-4">Order Confirmed!</h1>
+        <p className="text-muted-foreground mb-10 text-lg font-medium">
+          Thank you for your purchase. Your order <span className="text-foreground font-bold">#{orderSuccess}</span> is being processed.
         </p>
-        <div className="flex justify-center gap-4">
-          <Button render={<Link href="/account/orders" />} nativeButton={false}>
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <Button render={<Link href="/account/orders" />} nativeButton={false} className="h-14 rounded-xl text-lg font-bold shadow-lg shadow-primary/20 sm:w-1/2">
             View Orders
           </Button>
-          <Button render={<Link href="/products" />} nativeButton={false} variant="outline">
+          <Button render={<Link href="/products" />} nativeButton={false} variant="outline" className="h-14 rounded-xl text-lg font-bold border-2 sm:w-1/2">
             Continue Shopping
           </Button>
         </div>
@@ -126,9 +130,20 @@ export default function CheckoutPage() {
 
   if (isCartLoading && !cart) {
     return (
-      <div className="container mx-auto px-4 max-w-5xl">
-        <h1 className="text-2xl font-bold mb-8">Checkout</h1>
-        <Skeleton className="h-64 w-full rounded-xl" />
+      <div className="container mx-auto px-4 max-w-6xl py-8">
+        <div className="flex items-center gap-4 mb-8">
+          <Skeleton className="w-12 h-12 rounded-2xl" />
+          <Skeleton className="h-8 w-48 rounded-xl" />
+        </div>
+        <div className="grid lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-7 space-y-6">
+            <Skeleton className="h-64 w-full rounded-3xl" />
+            <Skeleton className="h-48 w-full rounded-3xl" />
+          </div>
+          <div className="lg:col-span-5">
+            <Skeleton className="h-96 w-full rounded-3xl" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -139,10 +154,11 @@ export default function CheckoutPage() {
 
   if (items.length === 0 && !placeOrderMutation.isPending) {
     return (
-      <div className="container mx-auto px-4 max-w-2xl text-center py-12">
-        <Package className="w-16 h-16 text-muted-foreground/50 mx-auto mb-6" />
-        <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
-        <Button render={<Link href="/products" />} nativeButton={false}>
+      <div className="container mx-auto px-4 max-w-lg text-center py-24 bg-card mt-12 rounded-3xl border shadow-xl shadow-black/5">
+        <Package className="w-20 h-20 text-muted-foreground/50 mx-auto mb-6" />
+        <h2 className="text-2xl font-bold text-foreground mb-4">Your cart is empty</h2>
+        <p className="text-muted-foreground font-medium mb-8">Looks like you haven't added anything to your cart yet.</p>
+        <Button render={<Link href="/products" />} nativeButton={false} className="h-12 rounded-xl font-bold px-8 shadow-lg shadow-primary/20">
           Return to Shop
         </Button>
       </div>
@@ -150,40 +166,62 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 max-w-5xl">
-      <h1 className="text-2xl font-bold mb-8">Checkout</h1>
+    <div className="container mx-auto px-4 max-w-6xl py-4 md:py-8">
+      <div className="flex items-center gap-4 mb-8">
+        <div className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-md">
+          <Lock className="w-6 h-6" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Secure Checkout</h1>
+          <p className="text-sm font-medium text-muted-foreground">Complete your purchase safely</p>
+        </div>
+      </div>
 
       {error && (
-        <div className="mb-6 p-4 rounded-md bg-destructive/15 text-destructive font-medium border border-destructive/20">
+        <div className="mb-6 p-4 rounded-2xl bg-destructive/15 text-destructive font-bold text-center animate-in slide-in-from-top-2">
           {error}
         </div>
       )}
 
-      <div className="grid lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-7 space-y-8">
+      <div className="grid lg:grid-cols-12 gap-8 items-start relative">
+        
+        {/* Left Column (Address & Payment) */}
+        <div className="lg:col-span-7 space-y-6">
           
           {/* Step 1: Address */}
-          <section className="bg-card border rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">1</div>
-              <h2 className="text-xl font-semibold">Delivery Address</h2>
+          <section className="bg-card border shadow-xl shadow-black/5 rounded-3xl p-6 md:p-8">
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b">
+              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">1</div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Delivery Address</h2>
+                <p className="text-sm text-muted-foreground font-medium mt-0.5">Where should we send your order?</p>
+              </div>
             </div>
             
             {isAddressesLoading ? (
-              <Skeleton className="h-32 w-full" />
+              <div className="grid gap-4">
+                <Skeleton className="h-32 w-full rounded-2xl" />
+                <Skeleton className="h-32 w-full rounded-2xl" />
+              </div>
             ) : addresses.length === 0 ? (
-              <div className="text-center py-6 border border-dashed rounded-lg">
-                <p className="text-muted-foreground mb-4">You don't have any saved addresses.</p>
-                <Button render={<Link href="/account/addresses" />} nativeButton={false} variant="outline">
+              <div className="text-center py-10 bg-muted/30 border border-dashed rounded-2xl">
+                <MapPin className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                <p className="text-muted-foreground font-medium mb-6">You don't have any saved addresses.</p>
+                <Button render={<Link href="/account/addresses" />} nativeButton={false} variant="outline" className="h-12 rounded-xl font-bold border-2">
                   Add New Address
                 </Button>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 {addresses.map(addr => (
                   <label 
                     key={addr.id} 
-                    className={`flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${selectedAddressId === addr.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+                    className={cn(
+                      "relative flex flex-col p-5 border rounded-2xl cursor-pointer transition-all duration-200",
+                      selectedAddressId === addr.id 
+                        ? "border-primary bg-primary/5 ring-1 ring-primary shadow-md" 
+                        : "hover:border-primary/50 hover:bg-muted/30 hover:shadow-sm"
+                    )}
                   >
                     <input 
                       type="radio" 
@@ -191,32 +229,68 @@ export default function CheckoutPage() {
                       value={addr.id} 
                       checked={selectedAddressId === addr.id}
                       onChange={() => setSelectedAddressId(addr.id)}
-                      className="mt-1"
+                      className="sr-only"
                     />
+                    
+                    <div className="flex justify-between items-start mb-4">
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-colors",
+                        selectedAddressId === addr.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      )}>
+                        {getAddressIcon(addr.title)}
+                      </div>
+                      <div className={cn(
+                        "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                        selectedAddressId === addr.id ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"
+                      )}>
+                        {selectedAddressId === addr.id && <Check className="w-3.5 h-3.5" />}
+                      </div>
+                    </div>
+                    
                     <div>
-                      <div className="font-medium flex items-center gap-2">
+                      <h4 className="font-bold text-foreground mb-1 flex items-center gap-2">
                         {addr.title}
-                        {addr.is_default && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Default</span>}
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {addr.street_address}, {addr.city}, {addr.state} {addr.postal_code}
-                      </div>
+                        {addr.is_default && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-wider">Default</span>}
+                      </h4>
+                      <p className="text-sm text-muted-foreground font-medium line-clamp-2">
+                        {addr.street_address}, {addr.city}
+                      </p>
                     </div>
                   </label>
                 ))}
+                
+                <label className="flex flex-col items-center justify-center p-5 border border-dashed rounded-2xl cursor-pointer hover:bg-muted/30 hover:border-primary/50 transition-colors text-muted-foreground hover:text-foreground">
+                   <Link href="/account/addresses" className="flex flex-col items-center justify-center w-full h-full">
+                     <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
+                       <MapPin className="w-5 h-5" />
+                     </div>
+                     <span className="font-bold text-sm">Add New Address</span>
+                   </Link>
+                </label>
               </div>
             )}
           </section>
 
           {/* Step 2: Payment Method */}
-          <section className="bg-card border rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">2</div>
-              <h2 className="text-xl font-semibold">Payment Method</h2>
+          <section className={cn(
+            "bg-card border shadow-xl shadow-black/5 rounded-3xl p-6 md:p-8 transition-opacity duration-300",
+            !selectedAddressId ? "opacity-50 pointer-events-none" : "opacity-100"
+          )}>
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b">
+              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">2</div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Payment Method</h2>
+                <p className="text-sm text-muted-foreground font-medium mt-0.5">How would you like to pay?</p>
+              </div>
             </div>
             
             <div className="grid sm:grid-cols-2 gap-4">
-              <label className={`flex flex-col items-center justify-center p-6 border rounded-lg cursor-pointer transition-colors ${paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
+              <label className={cn(
+                "relative flex flex-col items-center justify-center p-6 border rounded-2xl cursor-pointer transition-all duration-200 text-center",
+                paymentMethod === 'cod' 
+                  ? "border-primary bg-primary/5 ring-1 ring-primary shadow-md" 
+                  : "hover:border-primary/50 hover:bg-muted/30 hover:shadow-sm"
+              )}>
                 <input 
                   type="radio" 
                   name="payment" 
@@ -225,12 +299,30 @@ export default function CheckoutPage() {
                   onChange={() => setPaymentMethod('cod')}
                   className="sr-only"
                 />
-                <Package className="w-8 h-8 mb-3 text-muted-foreground" />
-                <span className="font-medium">Cash on Delivery</span>
-                <span className="text-xs text-muted-foreground mt-1">Pay when you receive</span>
+                <div className="absolute top-4 right-4">
+                  <div className={cn(
+                    "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                    paymentMethod === 'cod' ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"
+                  )}>
+                    {paymentMethod === 'cod' && <Check className="w-3.5 h-3.5" />}
+                  </div>
+                </div>
+                <div className={cn(
+                  "w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-colors",
+                  paymentMethod === 'cod' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  <Package className="w-6 h-6" />
+                </div>
+                <span className="font-bold text-foreground text-lg mb-1">Cash on Delivery</span>
+                <span className="text-xs text-muted-foreground font-medium">Pay in cash when order arrives</span>
               </label>
               
-              <label className={`flex flex-col items-center justify-center p-6 border rounded-lg cursor-pointer transition-colors ${paymentMethod === 'razorpay' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
+              <label className={cn(
+                "relative flex flex-col items-center justify-center p-6 border rounded-2xl cursor-pointer transition-all duration-200 text-center",
+                paymentMethod === 'razorpay' 
+                  ? "border-primary bg-primary/5 ring-1 ring-primary shadow-md" 
+                  : "hover:border-primary/50 hover:bg-muted/30 hover:shadow-sm"
+              )}>
                 <input 
                   type="radio" 
                   name="payment" 
@@ -239,23 +331,36 @@ export default function CheckoutPage() {
                   onChange={() => setPaymentMethod('razorpay')}
                   className="sr-only"
                 />
-                <CreditCard className="w-8 h-8 mb-3 text-muted-foreground" />
-                <span className="font-medium">Pay Online</span>
-                <span className="text-xs text-muted-foreground mt-1">Credit, Debit, UPI</span>
+                <div className="absolute top-4 right-4">
+                  <div className={cn(
+                    "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                    paymentMethod === 'razorpay' ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"
+                  )}>
+                    {paymentMethod === 'razorpay' && <Check className="w-3.5 h-3.5" />}
+                  </div>
+                </div>
+                <div className={cn(
+                  "w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-colors",
+                  paymentMethod === 'razorpay' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <span className="font-bold text-foreground text-lg mb-1">Pay Online</span>
+                <span className="text-xs text-muted-foreground font-medium">Credit, Debit, UPI, Netbanking</span>
               </label>
             </div>
           </section>
         </div>
 
-        {/* Order Summary */}
-        <div className="lg:col-span-5">
-          <div className="bg-muted/30 p-6 rounded-xl border sticky top-24">
-            <h2 className="text-lg font-semibold mb-6">Order Summary</h2>
+        {/* Right Column (Order Summary) */}
+        <div className="lg:col-span-5 relative">
+          <div className="bg-card border shadow-xl shadow-black/5 rounded-3xl p-6 lg:sticky lg:top-24">
+            <h2 className="text-xl font-bold text-foreground mb-6">Order Summary</h2>
             
-            <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2">
+            <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
               {items.map(item => (
-                <div key={item.id} className="flex gap-4">
-                  <div className="relative w-16 h-16 shrink-0 bg-background border rounded overflow-hidden">
+                <div key={item.id} className="flex gap-4 p-3 rounded-2xl bg-muted/30 border border-border/50">
+                  <div className="relative w-16 h-16 shrink-0 bg-background rounded-xl overflow-hidden shadow-sm">
                     <Image
                       src={item.product.primary_image?.image_url || PLACEHOLDER_IMAGE}
                       alt={item.product.name}
@@ -263,96 +368,99 @@ export default function CheckoutPage() {
                       className="object-cover"
                     />
                   </div>
-                  <div className="flex-1 min-w-0 text-sm">
-                    <p className="font-medium line-clamp-2">{item.product.name}</p>
-                    <p className="text-muted-foreground">Qty: {item.quantity}</p>
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <p className="font-bold text-foreground text-sm line-clamp-1">{item.product.name}</p>
+                    <p className="text-muted-foreground text-xs font-medium mt-1">Qty: {item.quantity}</p>
                   </div>
-                  <div className="text-sm font-medium">
+                  <div className="text-sm font-bold text-foreground flex items-center">
                     ₹{item.line_total.toFixed(2)}
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="space-y-3 text-sm mb-6 border-t pt-6">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>₹{subtotal.toFixed(2)}</span>
-              </div>
-              
-              {coupon && (
-                <div className="flex justify-between text-green-600 font-medium">
-                  <span>Discount ({coupon.code})</span>
-                  <span>-₹{discountAmount.toFixed(2)}</span>
-                </div>
-              )}
-              
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Shipping</span>
-                <span className="text-green-600">Free</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax</span>
-                <span>₹0.00</span>
-              </div>
-              <div className="border-t pt-3 flex justify-between font-bold text-xl">
-                <span>Total</span>
-                <span>₹{estimatedTotal.toFixed(2)}</span>
-              </div>
-            </div>
-
             <div className="border-t pt-6 mb-6">
-              <h3 className="text-sm font-medium mb-3">Promo Code</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 ml-1">Have a promo code?</h3>
               {coupon ? (
-                <div className="flex items-center justify-between p-3 border border-green-200 bg-green-50/50 rounded-lg mb-6">
-                  <div>
-                    <div className="font-bold text-green-700">{coupon.code} applied</div>
-                    <div className="text-xs text-green-600">
-                      {coupon.discount_type === 'percentage' 
-                        ? `${coupon.discount_value}% OFF`
-                        : `₹${coupon.discount_value} OFF`}
+                <div className="flex items-center justify-between p-4 border border-green-500/20 bg-green-500/10 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-green-500/20 text-green-600 flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-green-700 uppercase tracking-wide">{coupon.code}</div>
+                      <div className="text-xs text-green-600 font-medium">
+                        {coupon.discount_type === 'percentage' 
+                          ? `${coupon.discount_value}% OFF applied`
+                          : `₹${coupon.discount_value} OFF applied`}
+                      </div>
                     </div>
                   </div>
                   <button 
                     onClick={removeCoupon} 
-                    className="p-1 text-green-700 hover:bg-green-100 rounded-md transition-colors"
+                    className="p-2 text-green-700 hover:bg-green-500/20 rounded-xl transition-colors"
                     aria-label="Remove coupon"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleApplyCoupon} className="space-y-2 mb-6">
-                  <div className="flex gap-2">
-                    <Input 
-                      placeholder="Enter code..." 
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      className="uppercase"
-                    />
-                    <Button type="submit" variant="secondary" disabled={!couponCode.trim() || placeOrderMutation.isPending}>
-                      Apply
-                    </Button>
-                  </div>
-                  {couponError && (
-                    <p className="text-xs text-destructive font-medium mt-1">{couponError}</p>
-                  )}
+                <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                  <Input 
+                    placeholder="Enter code..." 
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    className="uppercase h-12 rounded-xl bg-muted/50 border-transparent focus-visible:bg-transparent focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                  />
+                  <Button type="submit" variant="secondary" className="h-12 px-6 rounded-xl font-bold border-2" disabled={!couponCode.trim() || placeOrderMutation.isPending}>
+                    Apply
+                  </Button>
                 </form>
+              )}
+              {couponError && (
+                <p className="text-xs text-destructive font-bold mt-2 ml-1 animate-in fade-in">{couponError}</p>
               )}
             </div>
 
+            <div className="space-y-4 text-sm font-medium mb-6 border-t pt-6 text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span className="text-foreground font-bold">₹{subtotal.toFixed(2)}</span>
+              </div>
+              
+              {coupon && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount</span>
+                  <span className="font-bold">-₹{discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+              
+              <div className="flex justify-between">
+                <span>Shipping</span>
+                <span className="text-green-600 font-bold">Free</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Tax</span>
+                <span className="text-foreground font-bold">₹0.00</span>
+              </div>
+              
+              <div className="border-t pt-4 mt-2 flex justify-between items-center text-foreground">
+                <span className="text-base font-bold">Total</span>
+                <span className="text-3xl font-black tracking-tight text-primary">₹{estimatedTotal.toFixed(2)}</span>
+              </div>
+            </div>
+
             <Button 
-              className="w-full h-12 text-lg"
+              className={cn(
+                "w-full h-14 text-lg font-bold rounded-xl shadow-lg transition-all duration-300",
+                !selectedAddressId ? "opacity-50 cursor-not-allowed" : "shadow-primary/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/30"
+              )}
               onClick={handlePlaceOrder}
               disabled={placeOrderMutation.isPending || !selectedAddressId}
             >
-              {placeOrderMutation.isPending ? 'Processing...' : 'Place Order'}
-              {!placeOrderMutation.isPending && <ArrowRight className="w-5 h-5 ml-2" />}
+              {placeOrderMutation.isPending ? 'Processing Securely...' : 'Place Order Securely'}
+              {!placeOrderMutation.isPending && <Lock className="w-5 h-5 ml-2" />}
             </Button>
-            
-            <p className="text-xs text-center text-muted-foreground mt-4 flex items-center justify-center gap-1">
-              <Lock className="w-3 h-3" /> Secure and encrypted checkout
-            </p>
           </div>
         </div>
       </div>

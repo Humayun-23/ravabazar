@@ -4,14 +4,14 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUserStore } from '@/store/userStore';
 import Link from 'next/link';
-import { User, MapPin, Package, LogOut } from 'lucide-react';
+import { User, MapPin, Package, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 const navigation = [
-  { name: 'Profile', href: '/account', icon: User },
+  { name: 'Settings', href: '/account', icon: Settings },
+  { name: 'Orders', href: '/account/orders', icon: Package, className: 'hidden md:flex' },
   { name: 'Addresses', href: '/account/addresses', icon: MapPin },
-  { name: 'Orders', href: '/account/orders', icon: Package },
 ];
 
 export default function AccountLayout({
@@ -41,12 +41,14 @@ export default function AccountLayout({
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">My Account</h1>
+    <div className="container mx-auto px-4 py-6 md:py-10">
+      <h1 className={cn("text-3xl font-bold tracking-tight mb-8", pathname.includes('/account/orders') ? "hidden md:block" : "block")}>
+        My Account
+      </h1>
       
       <div className="flex flex-col md:flex-row gap-8">
-        <aside className="w-full md:w-64 shrink-0">
-          <nav className="flex md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0">
+        <aside className="shrink-0 hidden md:block md:w-64">
+          <nav className="flex md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -58,7 +60,8 @@ export default function AccountLayout({
                     "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
                     isActive 
                       ? "bg-primary text-primary-foreground" 
-                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                      : "hover:bg-muted text-muted-foreground hover:text-foreground",
+                    (item as any).className
                   )}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -77,7 +80,10 @@ export default function AccountLayout({
         </aside>
 
         <main className="flex-1 min-w-0">
-          <div className="bg-card rounded-xl border shadow-sm p-6">
+          <div className={cn(
+            "bg-card rounded-xl", 
+            pathname.includes('/account/orders') ? "md:border md:shadow-sm md:p-6" : "border shadow-sm p-6"
+          )}>
             {children}
           </div>
         </main>

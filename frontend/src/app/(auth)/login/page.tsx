@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { Phone, Lock, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const [phone, setPhone] = useState('');
@@ -44,8 +45,6 @@ export default function LoginPage() {
               method: 'POST',
               body: JSON.stringify({ session_id: guestSession }),
             });
-            // Cart merged successfully, optionally we could clear guest_session here, 
-            // but keeping it is harmless as backend handles it gracefully
           } catch (e) {
             console.error('Failed to merge cart', e);
           }
@@ -61,58 +60,74 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          Enter your phone and password to sign in
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="p-3 rounded-md bg-destructive/15 text-destructive text-sm font-medium">
-            {error}
+    <div className="w-full max-w-md mx-auto">
+      <div className="bg-card border shadow-xl shadow-black/5 rounded-3xl p-6 md:p-8">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
+            <LogIn className="w-8 h-8" />
           </div>
-        )}
-        
-        <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number</Label>
-          <Input 
-            id="phone" 
-            type="tel" 
-            placeholder="9999999999" 
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            disabled={loading}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-          </div>
-          <Input 
-            id="password" 
-            type="password" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome Back</h1>
+          <p className="text-sm text-muted-foreground mt-2 font-medium">
+            Sign in to your account to continue
+          </p>
         </div>
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign In'}
-        </Button>
-      </form>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && (
+            <div className="p-3 text-center rounded-xl bg-destructive/15 text-destructive text-sm font-semibold animate-in fade-in slide-in-from-top-2">
+              {error}
+            </div>
+          )}
+          
+          <div className="space-y-1.5">
+            <Label htmlFor="phone" className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Phone Number</Label>
+            <div className="relative flex items-center group">
+              <div className="absolute left-3.5 text-muted-foreground group-focus-within:text-primary transition-colors">
+                <Phone className="w-5 h-5" />
+              </div>
+              <Input 
+                id="phone" 
+                type="tel" 
+                placeholder="9999999999" 
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                disabled={loading}
+                className="pl-11 h-12 rounded-xl bg-muted/50 border-transparent focus-visible:bg-transparent focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 text-base"
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-1.5">
+            <Label htmlFor="password" className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Password</Label>
+            <div className="relative flex items-center group">
+              <div className="absolute left-3.5 text-muted-foreground group-focus-within:text-primary transition-colors">
+                <Lock className="w-5 h-5" />
+              </div>
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="pl-11 h-12 rounded-xl bg-muted/50 border-transparent focus-visible:bg-transparent focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 text-base"
+              />
+            </div>
+          </div>
 
-      <div className="mt-6 text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{' '}
-        <Link href="/register" className="font-semibold text-primary hover:underline">
-          Sign up
-        </Link>
+          <Button type="submit" className="w-full h-12 rounded-xl text-base font-bold shadow-lg shadow-primary/20 mt-2" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Button>
+        </form>
+
+        <div className="mt-8 pt-6 border-t text-center text-sm font-medium text-muted-foreground">
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="font-bold text-primary hover:underline">
+            Create an account
+          </Link>
+        </div>
       </div>
     </div>
   );

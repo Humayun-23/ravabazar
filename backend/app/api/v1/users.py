@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db, get_current_user
-from app.schemas.users import User, UserProfileUpdate
+from app.schemas.users import User, UserProfileUpdate, PasswordChangeRequest
 from app.schemas.addresses import Address, CustomerAddressCreate, AddressUpdate
 from app.services.users import UserService
 from app.models.users import User as UserModel
@@ -27,6 +27,16 @@ def update_me(
 ):
     service = UserService(db)
     return service.update_profile(current_user, payload)
+
+@router.post("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: PasswordChangeRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    service = UserService(db)
+    service.change_password(current_user, payload)
+    return None
 
 # --- Address Endpoints ---
 @router.get("/me/addresses", response_model=List[Address])

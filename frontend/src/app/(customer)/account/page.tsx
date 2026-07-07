@@ -1,164 +1,288 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchApi } from '@/services/api';
-import { User } from '@/types/auth';
+import { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/userStore';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { User, MapPin, Lock, Moon, Sun, LogOut, ChevronRight, Settings as SettingsIcon } from 'lucide-react';
+import Link from 'next/link';
+import { useTheme } from 'next-themes';
+import { useMutation } from '@tanstack/react-query';
+import { fetchApi } from '@/services/api';
 
-export default function AccountProfilePage() {
-  const queryClient = useQueryClient();
-  const setUserState = useUserStore(state => state.setUser);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    email: ''
-  });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
-  const { data: user, isLoading, isError } = useQuery<User>({
-    queryKey: ['user', 'me'],
-    queryFn: () => fetchApi('/users/me'),
-  });
+export default function SettingsPage() {
+  const { user, logout } = useUserStore();
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   useEffect(() => {
-    if (user) {
-      setUserState(user);
-      setFormData({
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || ''
-      });
-    }
-  }, [user, setUserState]);
+    setMounted(true);
+  }, []);
 
-  const updateMutation = useMutation({
-    mutationFn: (data: Partial<User>) => fetchApi('/users/me', {
-      method: 'PATCH',
-      body: JSON.stringify(data),
+  const changePasswordMutation = useMutation({
+    mutationFn: () => fetchApi('/users/me/password', {
+      method: 'POST',
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
     }),
-    onSuccess: (updatedUser) => {
-      queryClient.setQueryData(['user', 'me'], updatedUser);
-      setUserState(updatedUser);
-      setIsEditing(false);
-      setSuccess('Profile updated successfully');
-      setTimeout(() => setSuccess(''), 3000);
+    onSuccess: () => {
+      setPasswordSuccess('Password changed successfully.');
+      setTimeout(() => {
+        setIsPasswordDialogOpen(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordSuccess('');
+      }, 2000);
     },
     onError: (err: any) => {
-      setError(err.message || 'Failed to update profile');
+      setPasswordError(err.message || 'Failed to change password');
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    updateMutation.mutate(formData);
+    setPasswordError('');
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return;
+    }
+    changePasswordMutation.mutate();
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold">Profile Details</h2>
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div className="space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
-          <div className="space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
-          <div className="space-y-2 sm:col-span-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
-          <div className="space-y-2 sm:col-span-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
-        </div>
-      </div>
-    );
-  }
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
-  if (isError || !user) {
-    return <div className="text-destructive">Failed to load profile details.</div>;
-  }
+  if (!mounted) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Profile Details</h2>
-        {!isEditing && (
-          <Button variant="outline" onClick={() => setIsEditing(true)}>
-            Edit Profile
-          </Button>
-        )}
+    <div className="w-full max-w-2xl mx-auto py-4 md:py-8 space-y-8">
+      
+      <div className="flex items-center gap-4 mb-8">
+        <div className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-md">
+          <SettingsIcon className="w-6 h-6" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+          <p className="text-sm font-medium text-muted-foreground">Manage your account and preferences</p>
+        </div>
       </div>
 
-      {success && (
-        <div className="p-3 rounded-md bg-green-500/15 text-green-600 dark:text-green-400 text-sm font-medium">
-          {success}
-        </div>
-      )}
-      
-      {error && (
-        <div className="p-3 rounded-md bg-destructive/15 text-destructive text-sm font-medium">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="first_name">First Name</Label>
-            <Input 
-              id="first_name" 
-              value={isEditing ? formData.first_name : user.first_name} 
-              onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-              readOnly={!isEditing} 
-              className={!isEditing ? "bg-muted cursor-default focus-visible:ring-0" : ""}
-            />
+      <div className="space-y-6">
+        
+        {/* Account Section */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-2">Account</h3>
+          <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
+            <Link href="/account/profile" className="flex items-center justify-between p-5 hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-foreground">Profile Information</h4>
+                  <p className="text-sm text-muted-foreground font-medium">Update your name and email</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </Link>
+            
+            <div className="h-px bg-border/50 mx-5" />
+            
+            <Link href="/account/addresses" className="flex items-center justify-between p-5 hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-foreground">Saved Addresses</h4>
+                  <p className="text-sm text-muted-foreground font-medium">Manage your delivery locations</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </Link>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="last_name">Last Name</Label>
-            <Input 
-              id="last_name" 
-              value={isEditing ? formData.last_name : user.last_name} 
-              onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-              readOnly={!isEditing}
-              className={!isEditing ? "bg-muted cursor-default focus-visible:ring-0" : ""}
-            />
+        </div>
+
+        {/* Security Section */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-2">Security</h3>
+          <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
+            <button 
+              onClick={() => setIsPasswordDialogOpen(true)}
+              className="w-full flex items-center justify-between p-5 hover:bg-muted/50 transition-colors group text-left"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-foreground">Change Password</h4>
+                  <p className="text-sm text-muted-foreground font-medium">Update your account password</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+
+        {/* App Preferences Section */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-2">App Preferences</h3>
+          <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
+            <button 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="w-full flex items-center justify-between p-5 hover:bg-muted/50 transition-colors group text-left"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                  {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h4 className="font-bold text-foreground">Dark Mode</h4>
+                  <p className="text-sm text-muted-foreground font-medium">Toggle dark mode appearance</p>
+                </div>
+              </div>
+              <div className="w-12 h-6 rounded-full bg-muted border flex items-center p-1 cursor-pointer">
+                <div className={`w-4 h-4 rounded-full bg-primary transition-transform duration-300 ${theme === 'dark' ? 'translate-x-6' : ''}`} />
+              </div>
+            </button>
           </div>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input 
-            id="email" 
-            type="email" 
-            value={isEditing ? formData.email : user.email} 
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            readOnly={!isEditing}
-            className={!isEditing ? "bg-muted cursor-default focus-visible:ring-0" : ""}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number (Cannot be changed)</Label>
-          <Input 
-            id="phone" 
-            value={user.phone} 
-            readOnly
-            className="bg-muted cursor-not-allowed opacity-70"
-          />
+        {/* Logout */}
+        <div className="pt-4">
+          <Button 
+            onClick={handleLogout} 
+            variant="outline" 
+            className="w-full h-14 rounded-2xl text-destructive hover:text-destructive hover:bg-destructive/10 border-2 font-bold text-lg"
+          >
+            <LogOut className="w-5 h-5 mr-2" />
+            Log Out
+          </Button>
         </div>
 
-        {isEditing && (
-          <div className="flex items-center gap-4">
-            <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} disabled={updateMutation.isPending}>
-              Cancel
-            </Button>
-          </div>
-        )}
-      </form>
+      </div>
+
+      {/* Password Change Dialog */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setIsPasswordDialogOpen(false);
+          setCurrentPassword('');
+          setNewPassword('');
+          setConfirmPassword('');
+          setPasswordError('');
+          setPasswordSuccess('');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md rounded-3xl p-6">
+          <form onSubmit={handlePasswordSubmit}>
+            <DialogHeader className="mb-6">
+              <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
+                <Lock className="w-6 h-6" />
+              </div>
+              <DialogTitle className="text-xl font-bold">Change Password</DialogTitle>
+              <DialogDescription className="font-medium text-base mt-2">
+                Enter your current password and a new one to update it.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 mb-8">
+              {passwordError && (
+                <div className="p-3 rounded-xl bg-destructive/15 text-destructive text-sm font-bold text-center">
+                  {passwordError}
+                </div>
+              )}
+              {passwordSuccess && (
+                <div className="p-3 rounded-xl bg-green-500/15 text-green-600 text-sm font-bold text-center">
+                  {passwordSuccess}
+                </div>
+              )}
+              
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Current Password</Label>
+                <Input 
+                  type="password" 
+                  required
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  disabled={changePasswordMutation.isPending || !!passwordSuccess}
+                  className="h-12 rounded-xl bg-muted/50 border-transparent focus-visible:bg-transparent focus-visible:ring-2 focus-visible:ring-primary/20 text-base"
+                />
+              </div>
+              
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">New Password</Label>
+                <Input 
+                  type="password" 
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={changePasswordMutation.isPending || !!passwordSuccess}
+                  className="h-12 rounded-xl bg-muted/50 border-transparent focus-visible:bg-transparent focus-visible:ring-2 focus-visible:ring-primary/20 text-base"
+                />
+              </div>
+              
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Confirm New Password</Label>
+                <Input 
+                  type="password" 
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={changePasswordMutation.isPending || !!passwordSuccess}
+                  className="h-12 rounded-xl bg-muted/50 border-transparent focus-visible:bg-transparent focus-visible:ring-2 focus-visible:ring-primary/20 text-base"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-3 sm:gap-0">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsPasswordDialogOpen(false)}
+                className="h-12 rounded-xl font-bold border-2 sm:w-1/2"
+                disabled={changePasswordMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="h-12 rounded-xl font-bold shadow-lg shadow-primary/20 sm:w-1/2"
+                disabled={changePasswordMutation.isPending || !!passwordSuccess}
+              >
+                {changePasswordMutation.isPending ? 'Updating...' : 'Update Password'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

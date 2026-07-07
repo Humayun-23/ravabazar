@@ -25,6 +25,10 @@ class UserProfileUpdate(BaseModel):
     first_name: Optional[str] = Field(None, max_length=100)
     last_name: Optional[str] = Field(None, max_length=100)
 
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+
 class UserInDBBase(UserBase):
     id: int
     created_at: datetime

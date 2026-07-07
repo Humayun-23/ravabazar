@@ -17,3 +17,4 @@ from .settings import Setting
 from .admins import Admin
 from .inventory import Inventory
 from .refresh_tokens import RefreshToken
+from .wishlists import Wishlist

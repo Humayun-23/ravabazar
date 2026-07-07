@@ -31,3 +31,14 @@ class Product(Base):
     category = relationship("Category", back_populates="products")
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
     inventory = relationship("Inventory", back_populates="product", uselist=False, cascade="all, delete-orphan")
+
+    @property
+    def available_stock(self) -> int:
+        return self.inventory.available_stock if self.inventory else 0
+
+    @property
+    def primary_image(self):
+        for img in self.images:
+            if img.is_primary:
+                return img
+        return self.images[0] if self.images else None

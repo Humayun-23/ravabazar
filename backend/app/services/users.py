@@ -5,8 +5,9 @@ from fastapi import HTTPException
 from app.models.users import User
 from app.repositories.users import UserRepository
 from app.repositories.addresses import AddressRepository
-from app.schemas.users import UserProfileUpdate, User as UserSchema
+from app.schemas.users import UserProfileUpdate, User as UserSchema, PasswordChangeRequest
 from app.schemas.addresses import CustomerAddressCreate, AddressUpdate, Address as AddressSchema
+from app.core.security import hash_password, verify_password
 
 
 class UserService:
@@ -21,6 +22,13 @@ class UserService:
         updated_user = self.user_repo.update(user, update_dict)
         self.db.commit()
         return UserSchema.model_validate(updated_user)
+
+    def change_password(self, user: User, data: PasswordChangeRequest):
+        if not verify_password(data.current_password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Incorrect current password")
+        
+        user.hashed_password = hash_password(data.new_password)
+        self.db.commit()
 
     # --- Address Methods ---
     def get_addresses(self, user_id: int) -> List[AddressSchema]:
