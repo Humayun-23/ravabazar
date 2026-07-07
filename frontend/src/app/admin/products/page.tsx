@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { adminApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
-import { Product } from '@/types/catalog';
+import { Product } from '@/types/product';
 
 interface ProductsResponse {
   items: Product[];
@@ -95,7 +95,7 @@ export default function AdminProductsPage() {
                         </div>
                         <div>
                           <p className="font-medium truncate max-w-[200px]">{product.name}</p>
-                          <p className="text-xs text-muted-foreground">{product.category_slug}</p>
+                          <p className="text-xs text-muted-foreground">{product.category?.slug}</p>
                         </div>
                       </div>
                     </td>
@@ -111,16 +111,12 @@ export default function AdminProductsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {product.inventory ? (
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            product.inventory.stock_quantity > product.inventory.low_stock_threshold ? 'bg-green-500' : 'bg-red-500'
-                          }`} />
-                          <span>{product.inventory.stock_quantity} in stock</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Not tracked</span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          product.available_stock > 5 ? 'bg-green-500' : 'bg-red-500'
+                        }`} />
+                        <span>{product.available_stock} in stock</span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">

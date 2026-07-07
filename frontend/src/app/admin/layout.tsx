@@ -77,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div className="p-4 border-t bg-muted/10">
           <div className="mb-4 px-2">
-            <p className="text-sm font-medium truncate">{admin?.full_name}</p>
+            <p className="text-sm font-medium truncate">{admin?.first_name} {admin?.last_name}</p>
             <p className="text-xs text-muted-foreground truncate">{admin?.email}</p>
           </div>
           <Button

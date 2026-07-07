@@ -7,6 +7,10 @@ export interface Category {
   is_active?: boolean;
 }
 
+export interface CategoryWithChildren extends Category {
+  children?: CategoryWithChildren[];
+}
+
 export interface ProductImage {
   id: number;
   image_url: string;

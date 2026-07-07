@@ -89,8 +89,26 @@ export const adminApi = {
 };
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+  let token = null;
   const guestSession = typeof window !== 'undefined' ? localStorage.getItem('guest_session') : null;
+
+  if (typeof window !== 'undefined') {
+    if (endpoint.startsWith('/admin')) {
+      // Get token from admin Zustand store
+      try {
+        const adminAuthStr = localStorage.getItem('ravabazar-admin-auth');
+        if (adminAuthStr) {
+          const adminAuth = JSON.parse(adminAuthStr);
+          token = adminAuth?.state?.token || null;
+        }
+      } catch (e) {
+        console.error('Failed to parse admin auth', e);
+      }
+    } else {
+      // Get token for regular customer
+      token = localStorage.getItem('access_token');
+    }
+  }
 
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),

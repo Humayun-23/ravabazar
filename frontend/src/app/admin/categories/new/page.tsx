@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { adminApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CategoryWithChildren } from '@/types/catalog';
+import { CategoryWithChildren } from '@/types/product';
 
 export default function NewCategoryPage() {
   const [name, setName] = useState('');

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { adminApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
-import { CategoryWithChildren } from '@/types/catalog';
+import { CategoryWithChildren } from '@/types/product';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<CategoryWithChildren[]>([]);
