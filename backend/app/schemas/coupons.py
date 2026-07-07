@@ -36,3 +36,12 @@ class CouponInDBBase(CouponBase):
 
 class Coupon(CouponInDBBase):
     pass
+
+class CouponValidateRequest(BaseModel):
+    code: str = Field(..., max_length=50)
+
+class CouponValidateResponse(BaseModel):
+    code: str
+    discount_type: str
+    discount_value: float
+    min_order_value: float

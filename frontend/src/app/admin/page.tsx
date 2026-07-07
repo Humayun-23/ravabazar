@@ -45,23 +45,23 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard 
             title="Total Revenue" 
-            value={`$${stats.total_revenue.toFixed(2)}`} 
+            value={`$${(stats.total_sales || 0).toFixed(2)}`} 
             icon="💰" 
           />
           <StatCard 
             title="Total Orders" 
-            value={stats.total_orders.toString()} 
+            value={(stats.total_orders || 0).toString()} 
             icon="🛒" 
           />
           <StatCard 
             title="Active Customers" 
-            value={stats.total_users.toString()} 
+            value={(stats.total_customers || 0).toString()} 
             icon="👥" 
           />
           <StatCard 
-            title="Active Products" 
-            value={stats.active_products.toString()} 
-            icon="📦" 
+            title="Pending Orders" 
+            value={(stats.pending_orders || 0).toString()} 
+            icon="⏳" 
           />
         </div>
       ) : null}

@@ -119,7 +119,7 @@ export default function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" render={<Link href={`/admin/products/${product.id}/edit`} />}>
                         Edit
                       </Button>
                     </td>

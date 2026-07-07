@@ -15,6 +15,7 @@ class OrderBase(BaseModel):
     tax: Optional[float] = 0.0
     final_amount: float
     status: Optional[str] = Field("pending_payment", max_length=50)
+    cancellation_reason: Optional[str] = Field(None, max_length=500)
     payment_method: str = Field(..., max_length=50)
 
 class OrderCreate(OrderBase):

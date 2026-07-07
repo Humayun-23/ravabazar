@@ -9,6 +9,18 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package, ChevronRight, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -39,10 +51,39 @@ function getStatusIcon(status: string) {
 }
 
 export default function AccountOrdersPage() {
+  const queryClient = useQueryClient();
+  const [cancelOrderId, setCancelOrderId] = useState<number | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState('');
+
   const { data, isLoading, error } = useQuery<PaginatedResponse<Order>>({
     queryKey: ['orders', 'my'],
     queryFn: () => fetchApi('/orders/my'),
   });
+
+  const cancelMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => 
+      fetchApi(`/orders/${id}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders', 'my'] });
+      setCancelOrderId(null);
+      setCancelReason('');
+      setCancelError('');
+    },
+    onError: (err: any) => {
+      setCancelError(err.message || 'Failed to cancel order');
+    }
+  });
+
+  const handleCancel = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cancelOrderId) {
+      cancelMutation.mutate({ id: cancelOrderId, reason: cancelReason });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -94,8 +135,17 @@ export default function AccountOrdersPage() {
                 )}
               </div>
               
-              <div className="flex items-center">
-                <Button variant="outline" className="w-full md:w-auto">
+              <div className="flex items-center gap-2">
+                {(order.status === 'pending_payment' || order.status === 'cod_pending') && (
+                  <Button 
+                    variant="destructive" 
+                    className="w-full md:w-auto"
+                    onClick={() => setCancelOrderId(order.id)}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                <Button variant="outline" className="w-full md:w-auto" render={<Link href={`/account/orders/${order.id}`} />} nativeButton={false}>
                   View Details <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -112,6 +162,40 @@ export default function AccountOrdersPage() {
           </Button>
         </div>
       )}
+
+      <Dialog open={cancelOrderId !== null} onOpenChange={(open) => !open && setCancelOrderId(null)}>
+        <DialogContent>
+          <form onSubmit={handleCancel}>
+            <DialogHeader>
+              <DialogTitle>Cancel Order #{cancelOrderId}</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to cancel this order? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="my-4">
+              <label htmlFor="reason" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">
+                Reason for cancellation (Optional)
+              </label>
+              <Textarea
+                id="reason"
+                placeholder="Tell us why you are cancelling..."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={3}
+              />
+              {cancelError && <p className="text-sm text-destructive mt-2">{cancelError}</p>}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCancelOrderId(null)}>
+                Keep Order
+              </Button>
+              <Button type="submit" variant="destructive" disabled={cancelMutation.isPending}>
+                {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Order'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

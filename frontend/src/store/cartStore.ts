@@ -14,14 +14,26 @@ interface CartState {
   addToCart: (product_id: number, quantity: number) => Promise<void>;
   updateCartItem: (item_id: number, quantity: number) => Promise<void>;
   removeCartItem: (item_id: number) => Promise<void>;
+  coupon: any | null;
+  discountAmount: number;
+  applyCoupon: (code: string) => Promise<void>;
+  removeCoupon: () => void;
+  calculateDiscount: (cartTotal: number) => void;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
   cart: null,
   isOpen: false,
   isLoading: false,
+  coupon: null,
+  discountAmount: 0,
   
-  setCart: (cart) => set({ cart }),
+  setCart: (cart) => {
+    set({ cart });
+    if (cart) {
+      get().calculateDiscount(cart.subtotal);
+    }
+  },
   setIsOpen: (isOpen) => set({ isOpen }),
   toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
   
@@ -35,12 +47,65 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
+  calculateDiscount: (cartTotal: number) => {
+    const { coupon } = get();
+    if (!coupon) {
+      set({ discountAmount: 0 });
+      return;
+    }
+    
+    if (cartTotal < coupon.min_order_value) {
+      // automatically remove invalid coupon
+      set({ coupon: null, discountAmount: 0 });
+      return;
+    }
+
+    let discount = 0;
+    if (coupon.discount_type === 'percentage') {
+      discount = cartTotal * (coupon.discount_value / 100);
+    } else {
+      discount = coupon.discount_value;
+    }
+    
+    // Ensure discount doesn't exceed cart total
+    discount = Math.min(discount, cartTotal);
+    set({ discountAmount: discount });
+  },
+
+  applyCoupon: async (code: string) => {
+    try {
+      set({ isLoading: true });
+      const couponRes = await fetchApi('/coupons/validate', {
+        method: 'POST',
+        body: JSON.stringify({ code })
+      });
+      
+      const currentCart = get().cart;
+      if (currentCart && currentCart.subtotal < couponRes.min_order_value) {
+        throw new Error(`Minimum order value of $${couponRes.min_order_value} required`);
+      }
+      
+      set({ coupon: couponRes, isLoading: false });
+      if (currentCart) {
+        get().calculateDiscount(currentCart.subtotal);
+      }
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  removeCoupon: () => {
+    set({ coupon: null, discountAmount: 0 });
+  },
+
   fetchCart: async () => {
     get().initGuestSession();
     try {
       set({ isLoading: true });
       const cart = await fetchApi('/cart');
-      set({ cart, isLoading: false });
+      get().setCart(cart);
+      set({ isLoading: false });
     } catch (error) {
       console.error('Failed to fetch cart:', error);
       set({ cart: null, isLoading: false });
@@ -55,7 +120,8 @@ export const useCartStore = create<CartState>((set, get) => ({
         method: 'POST',
         body: JSON.stringify({ product_id, quantity })
       });
-      set({ cart: updatedCart, isLoading: false });
+      get().setCart(updatedCart);
+      set({ isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;
@@ -69,7 +135,8 @@ export const useCartStore = create<CartState>((set, get) => ({
         method: 'PATCH',
         body: JSON.stringify({ quantity })
       });
-      set({ cart: updatedCart, isLoading: false });
+      get().setCart(updatedCart);
+      set({ isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;

@@ -60,6 +60,7 @@ The following rules must not be violated:
 # Project Rules
 
 - From now onwards, every test script, mock, or testing file should be written exclusively inside the `tests` directory (e.g., `backend/tests/`). Do not create loose test files like `test_models.py` in the root directories.
+- Keep in mind that the long-term goal is to port this frontend as an Android application using Capacitor. Ensure that frontend code (like storage access, routing, and APIs) remains compatible with this constraint where possible.
 
 ## Implementation Discipline
 

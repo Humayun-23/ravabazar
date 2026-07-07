@@ -8,9 +8,10 @@ import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { Address } from '@/types/address';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
-import { MapPin, CreditCard, ArrowRight, CheckCircle, Package, Lock } from 'lucide-react';
+import { MapPin, CreditCard, ArrowRight, CheckCircle, Package, Lock, X } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -18,7 +19,7 @@ const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, isLoading: isCartLoading, fetchCart } = useCartStore();
+  const { cart, isLoading: isCartLoading, fetchCart, coupon, discountAmount, applyCoupon, removeCoupon } = useCartStore();
   const { isAuthenticated } = useUserStore();
   
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
@@ -26,6 +27,21 @@ export default function CheckoutPage() {
   const [idempotencyKey, setIdempotencyKey] = useState<string>('');
   const [orderSuccess, setOrderSuccess] = useState<number | null>(null);
   const [error, setError] = useState('');
+  
+  const [couponCode, setCouponCode] = useState('');
+  const [couponError, setCouponError] = useState('');
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponCode.trim()) return;
+    setCouponError('');
+    try {
+      await applyCoupon(couponCode.trim().toUpperCase());
+      setCouponCode('');
+    } catch (err: any) {
+      setCouponError(err.message || 'Invalid coupon code');
+    }
+  };
 
   // Protect route
   useEffect(() => {
@@ -60,6 +76,7 @@ export default function CheckoutPage() {
       body: JSON.stringify({
         address_id: selectedAddressId,
         payment_method: paymentMethod,
+        coupon_code: coupon ? coupon.code : null,
       }),
     }),
     onSuccess: (data) => {
@@ -118,6 +135,7 @@ export default function CheckoutPage() {
 
   const items = cart?.items || [];
   const subtotal = cart?.subtotal || 0;
+  const estimatedTotal = Math.max(0, subtotal - (discountAmount || 0));
 
   if (items.length === 0 && !placeOrderMutation.isPending) {
     return (
@@ -261,6 +279,14 @@ export default function CheckoutPage() {
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>₹{subtotal.toFixed(2)}</span>
               </div>
+              
+              {coupon && (
+                <div className="flex justify-between text-green-600 font-medium">
+                  <span>Discount ({coupon.code})</span>
+                  <span>-₹{discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+              
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Shipping</span>
                 <span className="text-green-600">Free</span>
@@ -271,8 +297,48 @@ export default function CheckoutPage() {
               </div>
               <div className="border-t pt-3 flex justify-between font-bold text-xl">
                 <span>Total</span>
-                <span>₹{subtotal.toFixed(2)}</span>
+                <span>₹{estimatedTotal.toFixed(2)}</span>
               </div>
+            </div>
+
+            <div className="border-t pt-6 mb-6">
+              <h3 className="text-sm font-medium mb-3">Promo Code</h3>
+              {coupon ? (
+                <div className="flex items-center justify-between p-3 border border-green-200 bg-green-50/50 rounded-lg mb-6">
+                  <div>
+                    <div className="font-bold text-green-700">{coupon.code} applied</div>
+                    <div className="text-xs text-green-600">
+                      {coupon.discount_type === 'percentage' 
+                        ? `${coupon.discount_value}% OFF`
+                        : `₹${coupon.discount_value} OFF`}
+                    </div>
+                  </div>
+                  <button 
+                    onClick={removeCoupon} 
+                    className="p-1 text-green-700 hover:bg-green-100 rounded-md transition-colors"
+                    aria-label="Remove coupon"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleApplyCoupon} className="space-y-2 mb-6">
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="Enter code..." 
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      className="uppercase"
+                    />
+                    <Button type="submit" variant="secondary" disabled={!couponCode.trim() || placeOrderMutation.isPending}>
+                      Apply
+                    </Button>
+                  </div>
+                  {couponError && (
+                    <p className="text-xs text-destructive font-medium mt-1">{couponError}</p>
+                  )}
+                </form>
+              )}
             </div>
 
             <Button 

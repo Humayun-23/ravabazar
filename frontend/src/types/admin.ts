@@ -22,8 +22,43 @@ export interface AdminAuthResponse {
 }
 
 export interface DashboardStats {
-  total_users: number;
+  total_sales: number;
   total_orders: number;
-  total_revenue: number;
-  active_products: number;
+  pending_orders: number;
+  total_customers: number;
+  low_stock_alerts: any[];
+}
+
+export interface Banner {
+  id: number;
+  title: string | null;
+  image_url: string;
+  redirect_url: string | null;
+  position: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Coupon {
+  id: number;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  min_order_value: number;
+  valid_from: string | null;
+  valid_until: string | null;
+  usage_limit: number;
+  usage_count: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CouponListResponse {
+  items: Coupon[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
 }

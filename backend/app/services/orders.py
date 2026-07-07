@@ -232,7 +232,7 @@ class OrderService:
             )
         return order
 
-    def cancel_order(self, *, user_id: int, order_id: int) -> Order:
+    def cancel_order(self, *, user_id: int, order_id: int, reason: str | None = None) -> Order:
         order = self.get_my_order(user_id=user_id, order_id=order_id)
         if order.status not in CANCELLABLE_STATUSES:
             raise HTTPException(
@@ -254,6 +254,9 @@ class OrderService:
                 self.db.add(coupon)
 
         order.status = "cancelled"
+        if reason:
+            order.cancellation_reason = reason
+            
         self.db.add(order)
         self.db.commit()
         return self.orders.refresh_detail(order)

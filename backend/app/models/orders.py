@@ -31,6 +31,7 @@ class Order(Base):
     final_amount = Column(Float, nullable=False)
     
     status = Column(String(50), default="pending_payment")
+    cancellation_reason = Column(String(500), nullable=True)
     payment_method = Column(String(50), nullable=False)
     
     created_at = Column(DateTime, default=datetime.utcnow)

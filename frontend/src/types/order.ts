@@ -25,6 +25,7 @@ export interface Order {
   final_amount: number;
   status: string; // pending_payment, paid, cod_pending, confirmed, packed, shipped, out_for_delivery, delivered, cancelled, failed, refunded
   payment_method: string; // razorpay, cashfree, cod
+  cancellation_reason?: string;
   items: OrderItem[];
   payment?: any; // placeholder for payment details
   shipment?: any; // placeholder for shipment details
