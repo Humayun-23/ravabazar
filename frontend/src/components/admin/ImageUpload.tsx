@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { adminApi } from '@/services/api';
+import { getErrorMessage } from '@/lib/errors';
 
 interface ImageUploadProps {
   onUploadSuccess: (url: string) => void;
@@ -24,22 +25,7 @@ export function ImageUpload({ onUploadSuccess, folder = 'ravabazar/products' }: 
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files[0]);
-    }
-  }, []);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFileUpload(e.target.files[0]);
-    }
-  };
-
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
       setError('Please upload an image file (JPEG, PNG, etc).');
       return;
@@ -55,11 +41,26 @@ export function ImageUpload({ onUploadSuccess, folder = 'ravabazar/products' }: 
       const response = await adminApi.uploadImage(file, folder);
       onUploadSuccess(response.image_url);
       setPreview(response.image_url); // Update preview to actual URL
-    } catch (err: any) {
-      setError(err.message || 'Failed to upload image.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to upload image.'));
       setPreview('');
     } finally {
       setIsUploading(false);
+    }
+  }, [folder, onUploadSuccess]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  }, [handleFileUpload]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileUpload(e.target.files[0]);
     }
   };
 

@@ -34,7 +34,7 @@ export default function FavoritesPage() {
           <Heart className="w-16 h-16 mb-4 text-muted" />
           <h2 className="text-xl font-bold mb-2 text-foreground">No favorites yet</h2>
           <p className="mb-6 max-w-md">
-            You haven't added any products to your wishlist yet. Explore our products and tap the heart icon to save them here!
+            You haven&apos;t added any products to your wishlist yet. Explore our products and tap the heart icon to save them here!
           </p>
           <Link href="/products" className="px-6 py-2.5 bg-primary text-primary-foreground font-semibold rounded-full hover:bg-primary/90 transition-colors">
             Explore Products

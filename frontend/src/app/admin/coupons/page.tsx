@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { adminApi } from '@/services/api';
 import { Coupon, CouponListResponse } from '@/types/admin';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function AdminCouponsPage() {
   const [data, setData] = useState<CouponListResponse | null>(null);
@@ -13,22 +14,25 @@ export default function AdminCouponsPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
-  const fetchCoupons = async () => {
+  const fetchCoupons = useCallback(async () => {
     try {
       setLoading(true);
       const res = await adminApi.getCoupons({ page, page_size: 10 });
       setData(res);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch coupons');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to fetch coupons'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
-    fetchCoupons();
-  }, [page]);
+    const timeoutId = window.setTimeout(() => {
+      fetchCoupons();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchCoupons]);
 
   const handleToggleStatus = async (coupon: Coupon) => {
     try {
@@ -40,8 +44,8 @@ export default function AdminCouponsPage() {
           items: data.items.map((c) => (c.id === coupon.id ? { ...c, is_active: !coupon.is_active } : c)),
         });
       }
-    } catch (err: any) {
-      alert(err.message || 'Failed to update coupon status');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Failed to update coupon status'));
     }
   };
 
@@ -85,7 +89,7 @@ export default function AdminCouponsPage() {
               ) : data?.items.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">
-                    No coupons found. Click "Create Coupon" to add one.
+                    No coupons found. Click &quot;Create Coupon&quot; to add one.
                   </td>
                 </tr>
               ) : (

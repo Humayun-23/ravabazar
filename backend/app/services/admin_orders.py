@@ -11,7 +11,9 @@ from app.models.orders import Order
 
 # Valid transition map
 ALLOWED_TRANSITIONS = {
-    "pending_payment": ["processing", "cancelled"],
+    "pending_payment": ["cancelled"],
+    "paid": ["processing", "cancelled"],
+    "cod_pending": ["processing", "cancelled"],
     "processing": ["packed", "cancelled"],
     "packed": ["shipped", "cancelled"],
     "shipped": ["delivered", "returned", "cancelled"],
@@ -80,7 +82,13 @@ class AdminOrderService:
                     inventory.stock_quantity = max(0, inventory.stock_quantity - item.quantity)
                     inventory.reserved_quantity = max(0, inventory.reserved_quantity - item.quantity)
                     
-        elif new_status == "cancelled" and current_status in {"pending_payment", "processing", "packed"}:
+        elif new_status == "cancelled" and current_status in {
+            "pending_payment",
+            "paid",
+            "cod_pending",
+            "processing",
+            "packed",
+        }:
             # Free up reserved stock if cancelled before shipping
             for item in order.items:
                 if item.product and item.product.inventory:

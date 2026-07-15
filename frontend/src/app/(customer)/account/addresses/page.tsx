@@ -221,7 +221,7 @@ export default function AccountAddressesPage() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-foreground">Make this my default address</p>
-                <p className="text-xs text-muted-foreground">We'll use this for faster checkout</p>
+                <p className="text-xs text-muted-foreground">We&apos;ll use this for faster checkout</p>
               </div>
             </div>
 

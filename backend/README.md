@@ -2,8 +2,8 @@
 
 FastAPI backend for the Ravabazar e-commerce project.
 
-Current phase: backend foundation only. Product, order, payment, and auth
-business logic are intentionally not implemented yet.
+Current implementation includes the backend foundation plus scoped commerce
+modules that are being built phase by phase.
 
 ## Configuration
 
@@ -22,10 +22,31 @@ API_V1_PREFIX=/api/v1
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ravabazar
 JWT_SECRET=change_this_secret
 CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+PAYMENT_CURRENCY=INR
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=
+COURIER_PROVIDER=manual
+SHIPROCKET_BASE_URL=https://apiv2.shiprocket.in/v1/external
+SHIPROCKET_EMAIL=
+SHIPROCKET_PASSWORD=
+SHIPROCKET_PICKUP_LOCATION=
+SHIPROCKET_WEBHOOK_SECRET=
 ```
 
 Use a strong `JWT_SECRET` outside local development. Production must not use
 wildcard CORS.
+
+For Razorpay, set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and
+`RAZORPAY_WEBHOOK_SECRET`. The backend creates Razorpay Orders server-side,
+verifies Checkout signatures before marking an order paid, and accepts
+signature-protected webhooks at `/api/v1/payments/webhook`.
+
+For Shiprocket, set `COURIER_PROVIDER=shiprocket` or pass
+`provider=shiprocket` when creating a shipment. Configure
+`SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD`, `SHIPROCKET_PICKUP_LOCATION`, and
+`SHIPROCKET_WEBHOOK_SECRET`. The webhook endpoint is
+`/api/v1/shiprocket/webhook`.
 
 ## Local Development (Docker)
 

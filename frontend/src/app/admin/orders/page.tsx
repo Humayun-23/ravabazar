@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { adminApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
+import { Order } from '@/types/order';
+import { getErrorMessage } from '@/lib/errors';
 
 interface OrderListResponse {
-  items: any[];
+  items: Order[];
   total: number;
   page: number;
   page_size: number;
@@ -19,21 +21,24 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [page]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await adminApi.getOrders({ page, page_size: 15 });
       setData(response);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load orders');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to load orders'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      fetchOrders();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchOrders]);
 
   return (
     <div className="space-y-6">

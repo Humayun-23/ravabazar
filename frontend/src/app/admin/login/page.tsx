@@ -6,6 +6,7 @@ import { adminApi } from '@/services/api';
 import { useAdminStore } from '@/store/adminStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -24,8 +25,8 @@ export default function AdminLoginPage() {
       const response = await adminApi.login({ email, password });
       setAdminAuth(response);
       router.push('/admin');
-    } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Login failed. Please check your credentials.'));
     } finally {
       setIsLoading(false);
     }

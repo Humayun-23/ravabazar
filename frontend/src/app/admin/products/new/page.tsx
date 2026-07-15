@@ -8,6 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CategoryWithChildren } from '@/types/product';
 import { ImageUpload } from '@/components/admin/ImageUpload';
+import { getErrorMessage } from '@/lib/errors';
+
+function slugify(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+}
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -31,12 +36,6 @@ export default function NewProductPage() {
   const [categories, setCategories] = useState<CategoryWithChildren[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (name) {
-      setSlug(name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''));
-    }
-  }, [name]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -87,8 +86,8 @@ export default function NewProductPage() {
 
       await adminApi.createProduct(payload);
       router.push('/admin/products');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create product');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to create product'));
       setIsLoading(false);
     }
   };
@@ -142,7 +141,10 @@ export default function NewProductPage() {
                 <label className="text-sm font-medium">Product Name</label>
                 <Input
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setSlug(slugify(e.target.value));
+                  }}
                   placeholder="e.g. Wireless Noise-Cancelling Headphones"
                   required
                   className="w-full"

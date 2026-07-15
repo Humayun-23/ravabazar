@@ -26,7 +26,14 @@ export interface DashboardStats {
   total_orders: number;
   pending_orders: number;
   total_customers: number;
-  low_stock_alerts: any[];
+  low_stock_alerts: Array<{
+    id: number;
+    name: string;
+    sku: string | null;
+    stock_quantity: number;
+    reserved_quantity: number;
+    available_stock: number;
+  }>;
 }
 
 export interface Banner {

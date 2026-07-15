@@ -123,7 +123,9 @@ def test_admin_get_order(client: TestClient, test_admin_token, test_order):
 
 def test_admin_update_order_status_valid(client: TestClient, test_admin_token, test_order):
     headers = {"Authorization": f"Bearer {test_admin_token}"}
-    # valid transition pending_payment -> processing
+    test_order.status = "paid"
+
+    # valid transition paid -> processing
     res = client.patch(
         f"/api/v1/admin/orders/{test_order.id}/status", 
         json={"status": "processing"}, 
@@ -132,9 +134,35 @@ def test_admin_update_order_status_valid(client: TestClient, test_admin_token, t
     assert res.status_code == 200
     assert res.json()["status"] == "processing"
 
+def test_admin_update_cod_order_status_to_processing(client: TestClient, db_session, test_admin_token, test_order):
+    test_order.status = "cod_pending"
+    db_session.add(test_order)
+    db_session.commit()
+    headers = {"Authorization": f"Bearer {test_admin_token}"}
+
+    res = client.patch(
+        f"/api/v1/admin/orders/{test_order.id}/status",
+        json={"status": "processing"},
+        headers=headers,
+    )
+
+    assert res.status_code == 200
+    assert res.json()["status"] == "processing"
+
 def test_admin_update_order_status_invalid(client: TestClient, test_admin_token, test_order):
     headers = {"Authorization": f"Bearer {test_admin_token}"}
-    # invalid transition pending_payment -> delivered
+    # unpaid online orders cannot enter fulfillment
+    res = client.patch(
+        f"/api/v1/admin/orders/{test_order.id}/status", 
+        json={"status": "processing"}, 
+        headers=headers
+    )
+    assert res.status_code == 400
+    assert "Invalid transition" in res.json()["error"]["message"]
+
+def test_admin_update_order_status_still_rejects_direct_delivery(client: TestClient, test_admin_token, test_order):
+    headers = {"Authorization": f"Bearer {test_admin_token}"}
+
     res = client.patch(
         f"/api/v1/admin/orders/{test_order.id}/status", 
         json={"status": "delivered"}, 

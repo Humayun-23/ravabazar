@@ -10,6 +10,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { getErrorMessage } from '@/lib/errors';
 
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%2364748b'%3ENo Image%3C/text%3E%3C/svg%3E";
 
@@ -40,8 +41,8 @@ export default function CartPage() {
     try {
       await applyCoupon(couponCode.trim().toUpperCase());
       setCouponCode('');
-    } catch (err: any) {
-      setCouponError(err.message || 'Invalid coupon code');
+    } catch (err) {
+      setCouponError(getErrorMessage(err, 'Invalid coupon code'));
     }
   };
 

@@ -2,6 +2,62 @@ import { AdminAuthResponse, DashboardStats, AdminLoginCredentials } from '@/type
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
+type ApiParam = string | number | boolean | null | undefined;
+type ApiPayload = Record<string, unknown>;
+
+export interface PaymentClientPayload {
+  key: string;
+  order_id: string;
+  amount: number;
+  currency: string;
+  name?: string;
+  description?: string;
+}
+
+export interface PaymentCreateOrderResponse {
+  id: number;
+  order_id: number;
+  provider: string;
+  provider_order_id: string;
+  amount: number;
+  status: string;
+  client_payload: PaymentClientPayload;
+}
+
+export interface PaymentVerifyPayload {
+  order_id: number;
+  provider: string;
+  provider_order_id: string;
+  provider_payment_id: string;
+  signature: string;
+}
+
+export interface PaymentVerifyResponse {
+  payment_id: number;
+  order_id: number;
+  status: string;
+  order_status: string;
+}
+
+export const paymentApi = {
+  createRazorpayOrder: async (orderId: number): Promise<PaymentCreateOrderResponse> => {
+    return fetchApi('/payments/create-order', {
+      method: 'POST',
+      body: JSON.stringify({
+        order_id: orderId,
+        provider: 'razorpay',
+      }),
+    });
+  },
+
+  verifyRazorpayPayment: async (payload: PaymentVerifyPayload): Promise<PaymentVerifyResponse> => {
+    return fetchApi('/payments/verify', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+};
+
 export const adminApi = {
   login: async (credentials: AdminLoginCredentials): Promise<AdminAuthResponse> => {
     return fetchApi('/admin/auth/login', {
@@ -22,14 +78,14 @@ export const adminApi = {
     });
   },
 
-  createCategory: async (data: any) => {
+  createCategory: async (data: ApiPayload) => {
     return fetchApi('/admin/categories', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  getProducts: async (params: Record<string, any> = {}) => {
+  getProducts: async (params: Record<string, ApiParam> = {}) => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -48,21 +104,21 @@ export const adminApi = {
     });
   },
 
-  createProduct: async (data: any) => {
+  createProduct: async (data: ApiPayload) => {
     return fetchApi('/admin/products', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  updateProduct: async (id: number, data: any) => {
+  updateProduct: async (id: number, data: ApiPayload) => {
     return fetchApi(`/admin/products/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   },
 
-  getOrders: async (params: Record<string, any> = {}) => {
+  getOrders: async (params: Record<string, ApiParam> = {}) => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -75,7 +131,7 @@ export const adminApi = {
     });
   },
 
-  getCustomers: async (params: Record<string, any> = {}) => {
+  getCustomers: async (params: Record<string, ApiParam> = {}) => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -101,7 +157,14 @@ export const adminApi = {
     });
   },
 
-  uploadImage: async (file: File, folder?: string): Promise<{ image_url: string; public_id: string; format: string; width: number; height: number }> => {
+  createShipment: async (data: ApiPayload) => {
+    return fetchApi('/admin/shipments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  uploadImage: async (file: File, folder?: string): Promise<{ image_url: string; provider: string }> => {
     const formData = new FormData();
     formData.append('file', file);
     if (folder) {
@@ -119,14 +182,14 @@ export const adminApi = {
     });
   },
 
-  createBanner: async (data: any) => {
+  createBanner: async (data: ApiPayload) => {
     return fetchApi('/admin/banners', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  updateBanner: async (id: number, data: any) => {
+  updateBanner: async (id: number, data: ApiPayload) => {
     return fetchApi(`/admin/banners/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -139,7 +202,7 @@ export const adminApi = {
     });
   },
 
-  getCoupons: async (params: Record<string, any> = {}) => {
+  getCoupons: async (params: Record<string, ApiParam> = {}) => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -152,14 +215,14 @@ export const adminApi = {
     });
   },
 
-  createCoupon: async (data: any) => {
+  createCoupon: async (data: ApiPayload) => {
     return fetchApi('/admin/coupons', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  updateCoupon: async (id: number, data: any) => {
+  updateCoupon: async (id: number, data: ApiPayload) => {
     return fetchApi(`/admin/coupons/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -244,7 +307,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
             } else {
               throw new Error('Refresh failed');
             }
-          } catch (e) {
+          } catch {
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
             window.location.href = '/login';

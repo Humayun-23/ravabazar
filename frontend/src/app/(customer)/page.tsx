@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchApi } from '@/services/api';
-import { Banner } from '@/types/banner';
 import { PaginatedResponse, Product } from '@/types/product';
 import { ProductCard } from '@/components/products/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,11 +17,6 @@ interface Category {
 }
 
 export default function HomePage() {
-  const { data: banners, isLoading: loadingBanners } = useQuery<Banner[]>({
-    queryKey: ['banners'],
-    queryFn: () => fetchApi('/banners').catch(() => []),
-  });
-
   const { data: categories } = useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: () => fetchApi('/categories').catch(() => []),

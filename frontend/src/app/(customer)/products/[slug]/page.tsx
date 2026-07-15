@@ -5,15 +5,13 @@ import { fetchApi } from '@/services/api';
 import { Product } from '@/types/product';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { ShoppingBag, ChevronLeft, Check, Minus, Plus, Star, Heart } from 'lucide-react';
+import { ShoppingBag, ChevronLeft, Minus, Plus, Star, Heart } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { cn } from '@/lib/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import Link from 'next/link';
 
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%2364748b'%3ENo Image%3C/text%3E%3C/svg%3E";
 
@@ -50,7 +48,7 @@ export default function ProductDetailsPage() {
     return (
       <div className="container mx-auto px-4 py-24 text-center">
         <h2 className="text-2xl font-bold mb-2">Product Not Found</h2>
-        <p className="text-muted-foreground">The product you're looking for doesn't exist or is unavailable.</p>
+        <p className="text-muted-foreground">The product you&apos;re looking for doesn&apos;t exist or is unavailable.</p>
         <Button onClick={() => router.back()} className="mt-8 rounded-full">Go Back</Button>
       </div>
     );

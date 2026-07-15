@@ -19,9 +19,10 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useMutation } from '@tanstack/react-query';
 import { fetchApi } from '@/services/api';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function SettingsPage() {
-  const { user, logout } = useUserStore();
+  const { logout } = useUserStore();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -34,7 +35,8 @@ export default function SettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
   useEffect(() => {
-    setMounted(true);
+    const timeoutId = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   const changePasswordMutation = useMutation({
@@ -55,8 +57,8 @@ export default function SettingsPage() {
         setPasswordSuccess('');
       }, 2000);
     },
-    onError: (err: any) => {
-      setPasswordError(err.message || 'Failed to change password');
+    onError: (err) => {
+      setPasswordError(getErrorMessage(err, 'Failed to change password'));
     }
   });
 

@@ -5,11 +5,11 @@ import { fetchApi } from '@/services/api';
 import { User } from '@/types/auth';
 import { useUserStore } from '@/store/userStore';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
 import { User as UserIcon, Mail, Phone, Edit2, Check, X, Camera } from 'lucide-react';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function AccountProfilePage() {
   const queryClient = useQueryClient();
@@ -30,12 +30,15 @@ export default function AccountProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setUserState(user);
-      setFormData({
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || ''
-      });
+      const timeoutId = window.setTimeout(() => {
+        setUserState(user);
+        setFormData({
+          first_name: user.first_name || '',
+          last_name: user.last_name || '',
+          email: user.email || ''
+        });
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
     }
   }, [user, setUserState]);
 
@@ -51,8 +54,8 @@ export default function AccountProfilePage() {
       setSuccess('Profile updated successfully');
       setTimeout(() => setSuccess(''), 3000);
     },
-    onError: (err: any) => {
-      setError(err.message || 'Failed to update profile');
+    onError: (err) => {
+      setError(getErrorMessage(err, 'Failed to update profile'));
     }
   });
 

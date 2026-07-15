@@ -4,7 +4,7 @@ from app.api.v1 import (
     cart, orders, payments, uploads, admin, banners,
     admin_products, admin_categories, admin_orders, admin_payments,
     admin_shipments, admin_users, admin_dashboard, admin_coupons,
-    admin_banners, admin_settings, admin_inventory
+    admin_banners, admin_settings, admin_inventory, shiprocket_webhooks
 )
 from app.api.v1 import coupons, wishlists
 
@@ -28,10 +28,12 @@ api_router.include_router(admin_orders.router, prefix="/admin/orders", tags=["ad
 api_router.include_router(admin_payments.router, prefix="/admin/payments", tags=["admin-payments"])
 api_router.include_router(admin_shipments.router, prefix="/admin/shipments", tags=["admin-shipments"])
 api_router.include_router(admin_users.router, prefix="/admin/customers", tags=["admin-customers"])
+api_router.include_router(admin_users.router, prefix="/admin/users", tags=["admin-users"])
 api_router.include_router(admin_dashboard.router, prefix="/admin/dashboard", tags=["admin-dashboard"])
 api_router.include_router(admin_coupons.router, prefix="/admin/coupons", tags=["admin-coupons"])
 api_router.include_router(admin_banners.router, prefix="/admin/banners", tags=["admin-banners"])
 api_router.include_router(admin_settings.router, prefix="/admin/settings", tags=["admin-settings"])
 api_router.include_router(admin_inventory.router, prefix="/admin/inventory", tags=["admin-inventory"])
+api_router.include_router(shiprocket_webhooks.router, prefix="/shiprocket", tags=["shiprocket"])
 api_router.include_router(banners.router, prefix="/banners", tags=["banners"])
 api_router.include_router(wishlists.router, prefix="/wishlists", tags=["wishlists"])

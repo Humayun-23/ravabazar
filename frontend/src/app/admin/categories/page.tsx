@@ -1,31 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { adminApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { CategoryWithChildren } from '@/types/product';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<CategoryWithChildren[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await adminApi.getCategories();
       setCategories(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load categories');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to load categories'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      fetchCategories();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchCategories]);
 
   return (
     <div className="space-y-6">

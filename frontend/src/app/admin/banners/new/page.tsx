@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function NewBannerPage() {
   const router = useRouter();
@@ -42,8 +43,8 @@ export default function NewBannerPage() {
 
       await adminApi.createBanner(payload);
       router.push('/admin/banners');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create banner');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to create banner'));
       setLoading(false);
     }
   };

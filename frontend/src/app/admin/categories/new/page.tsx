@@ -7,6 +7,11 @@ import { adminApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CategoryWithChildren } from '@/types/product';
+import { getErrorMessage } from '@/lib/errors';
+
+function slugify(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+}
 
 export default function NewCategoryPage() {
   const [name, setName] = useState('');
@@ -18,13 +23,6 @@ export default function NewCategoryPage() {
   const [error, setError] = useState('');
   
   const router = useRouter();
-
-  useEffect(() => {
-    // Auto-generate slug from name
-    if (name) {
-      setSlug(name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''));
-    }
-  }, [name]);
 
   useEffect(() => {
     // Fetch categories for the parent dropdown
@@ -51,8 +49,8 @@ export default function NewCategoryPage() {
         parent_id: parentId === '' ? null : Number(parentId),
       });
       router.push('/admin/categories');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create category');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to create category'));
       setIsLoading(false);
     }
   };
@@ -99,7 +97,10 @@ export default function NewCategoryPage() {
               type="text"
               placeholder="e.g. Electronics"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setSlug(slugify(e.target.value));
+              }}
               required
               className="w-full"
             />

@@ -12,7 +12,7 @@ router = APIRouter()
 def health_check():
     return {"status": "ok", "module": "products"}
 
-@router.get("", response_model=ProductListResponse)
+@router.get("/", response_model=ProductListResponse)
 def get_products(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CategoryWithChildren } from '@/types/product';
 import { ImageUpload } from '@/components/admin/ImageUpload';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -57,8 +58,8 @@ export default function EditProductPage() {
         if (prod.primary_image) {
           setImageUrl(prod.primary_image.image_url);
         }
-      } catch (err: any) {
-        setError(err.message || 'Failed to load product data');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to load product data'));
       } finally {
         setInitialLoading(false);
       }
@@ -104,8 +105,8 @@ export default function EditProductPage() {
 
       await adminApi.updateProduct(id, payload);
       router.push('/admin/products');
-    } catch (err: any) {
-      setError(err.message || 'Failed to update product');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to update product'));
       setIsLoading(false);
     }
   };

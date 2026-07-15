@@ -6,7 +6,7 @@ import { Order } from '@/types/order';
 import { PaginatedResponse } from '@/types/product';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Package, ChevronRight, Clock, CheckCircle2, XCircle, AlertCircle, ShoppingBag } from 'lucide-react';
+import { ChevronRight, Clock, CheckCircle2, XCircle, AlertCircle, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { getErrorMessage } from '@/lib/errors';
 
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%2364748b'%3ENo Image%3C/text%3E%3C/svg%3E";
 
@@ -87,8 +88,8 @@ export default function AccountOrdersPage() {
       setCancelReason('');
       setCancelError('');
     },
-    onError: (err: any) => {
-      setCancelError(err.message || 'Failed to cancel order');
+    onError: (err) => {
+      setCancelError(getErrorMessage(err, 'Failed to cancel order'));
     }
   });
 
@@ -220,7 +221,7 @@ export default function AccountOrdersPage() {
           </div>
           <h3 className="text-xl font-bold text-foreground">No orders found</h3>
           <p className="text-muted-foreground mt-2 mb-8 font-medium max-w-sm mx-auto">
-            You haven't placed any orders yet. Discover our collection and start shopping!
+            You haven&apos;t placed any orders yet. Discover our collection and start shopping!
           </p>
           <Button render={<Link href="/products" />} nativeButton={false} className="rounded-full h-12 px-8 font-bold shadow-lg shadow-primary/20">
             Browse Products

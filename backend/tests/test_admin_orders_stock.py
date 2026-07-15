@@ -167,3 +167,19 @@ def test_admin_order_stock_release_cancelled(client: TestClient, db_session, tes
     assert product.inventory.stock_quantity == 10
     assert product.inventory.reserved_quantity == 0
     assert product.inventory.available_stock == 10
+
+def test_admin_paid_order_stock_release_cancelled(client: TestClient, db_session, test_admin_token, test_order_with_stock):
+    order, product = test_order_with_stock
+    order.status = "paid"
+    db_session.add(order)
+    db_session.commit()
+    headers = {"Authorization": f"Bearer {test_admin_token}"}
+
+    payload = {"status": "cancelled"}
+    res = client.patch(f"/api/v1/admin/orders/{order.id}/status", headers=headers, json=payload)
+
+    assert res.status_code == 200
+    db_session.refresh(product.inventory)
+    assert product.inventory.stock_quantity == 10
+    assert product.inventory.reserved_quantity == 0
+    assert product.inventory.available_stock == 10

@@ -1,12 +1,20 @@
-import cloudinary
-import cloudinary.uploader
 from fastapi import HTTPException, UploadFile
 
 from app.core.config import settings
 from app.schemas.uploads import ImageUploadResponse
 
+try:
+    import cloudinary
+    import cloudinary.uploader
+except ImportError:  # pragma: no cover - exercised when local deps are incomplete
+    cloudinary = None
+
+
 class CloudinaryUploadService:
     def __init__(self):
+        if cloudinary is None:
+            return
+
         # Configure cloudinary
         if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY and settings.CLOUDINARY_API_SECRET:
             cloudinary.config(
@@ -20,6 +28,12 @@ class CloudinaryUploadService:
         # Validate content type (basic check)
         if not file.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="File provided is not an image")
+
+        if cloudinary is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Cloudinary dependency is not installed.",
+            )
             
         try:
             # Read file into memory

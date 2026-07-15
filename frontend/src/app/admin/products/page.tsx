@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { adminApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Product } from '@/types/product';
+import { getErrorMessage } from '@/lib/errors';
 
 interface ProductsResponse {
   items: Product[];
@@ -20,21 +21,24 @@ export default function AdminProductsPage() {
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [page]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await adminApi.getProducts({ page, page_size: 10 });
       setData(response);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load products');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to load products'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      fetchProducts();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchProducts]);
 
   return (
     <div className="space-y-6">

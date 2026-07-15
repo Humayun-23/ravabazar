@@ -1,41 +1,45 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { adminApi } from '@/services/api';
 import { Banner } from '@/types/admin';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function AdminBannersPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBanners = async () => {
+  const fetchBanners = useCallback(async () => {
     try {
       setLoading(true);
       const res = await adminApi.getBanners();
       setBanners(res);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch banners');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to fetch banners'));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchBanners();
-  }, []);
+    const timeoutId = window.setTimeout(() => {
+      fetchBanners();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchBanners]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this banner?')) return;
     try {
       await adminApi.deleteBanner(id);
       setBanners(banners.filter(b => b.id !== id));
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete banner');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Failed to delete banner'));
     }
   };
 
@@ -43,8 +47,8 @@ export default function AdminBannersPage() {
     try {
       const res = await adminApi.updateBanner(banner.id, { is_active: !banner.is_active });
       setBanners(banners.map(b => b.id === banner.id ? res : b));
-    } catch (err: any) {
-      alert(err.message || 'Failed to update banner status');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Failed to update banner status'));
     }
   };
 
@@ -89,7 +93,7 @@ export default function AdminBannersPage() {
               ) : banners.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
-                    No banners found. Click "Add Banner" to create one.
+                    No banners found. Click &quot;Add Banner&quot; to create one.
                   </td>
                 </tr>
               ) : (

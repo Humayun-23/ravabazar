@@ -29,5 +29,9 @@ Planned tables:
   `idempotency_request_hash` so checkout retries are safe.
 - `order_items` stores `product_name_snapshot` and `price_snapshot` so order
   history does not change when catalog data changes later.
+- `shipments` stores manual courier fields plus provider fields such as
+  `provider`, `provider_order_id`, `provider_shipment_id`, `awb_number`,
+  `tracking_url`, `label_url`, and `raw_provider_payload` for Shiprocket
+  debugging and webhook reconciliation.
 - Customer carts are unique per non-null `user_id`; guest carts are unique per
   non-null `session_id`; cart items are unique by `(cart_id, product_id)`.

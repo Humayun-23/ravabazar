@@ -783,7 +783,9 @@ Response `201`:
     "key": "public-provider-key",
     "order_id": "order_provider_123",
     "amount": 18000,
-    "currency": "INR"
+    "currency": "INR",
+    "name": "Ravabazar",
+    "description": "Order #1"
   }
 }
 ```
@@ -796,6 +798,8 @@ Order status must be pending_payment.
 Order payment_method must match provider.
 Amount must be calculated from backend order totals.
 Payment provider public key must come from backend configuration.
+Razorpay orders must be created on the backend with provider credentials.
+Razorpay amount must be sent in the smallest currency subunit.
 ```
 
 ### `POST /api/v1/payments/verify`
@@ -863,6 +867,81 @@ On successful payment, update payment status and order status.
 On failure, update payment status and order status to failed where appropriate.
 Do not trust unauthenticated payload fields.
 Webhook signature verification uses HMAC-SHA256 over the raw request body.
+```
+
+## Shipments
+
+### `POST /api/v1/admin/shipments`
+
+Create a manual or Shiprocket shipment for a packed order.
+
+Manual request:
+
+```json
+{
+  "order_id": 1,
+  "courier_name": "Manual Courier",
+  "tracking_number": "TRK123456"
+}
+```
+
+Shiprocket request:
+
+```json
+{
+  "order_id": 1,
+  "provider": "shiprocket"
+}
+```
+
+Response `201`:
+
+```json
+{
+  "id": 1,
+  "order_id": 1,
+  "provider": "shiprocket",
+  "provider_order_id": "123",
+  "provider_shipment_id": "456",
+  "awb_number": "AWB123456",
+  "tracking_number": "AWB123456",
+  "courier_name": "Delhivery",
+  "courier_company": "Delhivery",
+  "tracking_url": "https://...",
+  "label_url": "https://...",
+  "status": "shipped"
+}
+```
+
+Rules:
+
+```text
+Only admins can create shipments.
+Order status must be packed.
+Only one shipment can exist per order.
+Shiprocket shipments use backend credentials only.
+If Shiprocket returns an AWB/shipped status, order moves packed -> shipped.
+If Shiprocket only creates the provider shipment without AWB, order remains packed.
+```
+
+### `POST /api/v1/shiprocket/webhook`
+
+Shiprocket shipment status webhook.
+
+Headers:
+
+```http
+X-Shiprocket-Signature: <hmac-sha256-raw-body>
+X-Shiprocket-Webhook-Secret: <shared-secret>
+```
+
+Rules:
+
+```text
+If SHIPROCKET_WEBHOOK_SECRET is configured, one of the supported verification headers must be valid.
+Delivered shipment updates order to delivered.
+Returned/RTO shipment updates order to returned when the current order state allows it.
+Webhook payload is stored in shipment raw_provider_payload for debugging.
 ```
 
 ## Admin Authentication
@@ -1287,6 +1366,15 @@ Status changes must be audit logged once audit logs are implemented.
 List customers.
 
 Response `200`: paginated customer envelope.
+
+### `GET /api/v1/admin/users`
+
+Compatibility alias for listing customers. Returns the same response as
+`GET /api/v1/admin/customers`.
+
+### `GET /api/v1/admin/users/{id}`
+
+Compatibility alias for customer detail lookup.
 
 ### `GET /api/v1/admin/payments`
 

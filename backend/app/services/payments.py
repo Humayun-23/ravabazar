@@ -3,10 +3,12 @@ import hmac
 import json
 from uuid import uuid4
 
+import httpx
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.models.orders import Order
 from app.models.payments import Payment
 from app.repositories.orders import OrderRepository
 from app.repositories.payments import PaymentRepository
@@ -68,14 +70,23 @@ class PaymentService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Order payment cannot be recreated.",
                 )
+            if payment.status == "created" and payment.provider_order_id:
+                payment.amount = order.final_amount
+                self.db.add(payment)
+                self.db.commit()
+                payment = self.payments.refresh(payment)
+                return self._create_order_response(payment)
+
             payment.status = "created"
             payment.amount = order.final_amount
+            payment.provider_payment_id = None
+            payment.provider_order_id = self._create_provider_order_id(provider, order)
             self.db.add(payment)
         else:
             payment = self.payments.create(
                 order_id=order.id,
                 provider=provider,
-                provider_order_id=self._new_provider_order_id(provider, order.id),
+                provider_order_id=self._create_provider_order_id(provider, order),
                 amount=order.final_amount,
                 status="created",
             )
@@ -190,8 +201,10 @@ class PaymentService:
             client_payload={
                 "key": self._provider_public_key(payment.provider),
                 "order_id": payment.provider_order_id,
-                "amount": int(round(payment.amount * 100)),
+                "amount": self._amount_to_subunits(payment.amount),
                 "currency": settings.PAYMENT_CURRENCY,
+                "name": "Ravabazar",
+                "description": f"Order #{payment.order_id}",
             },
         )
 
@@ -208,6 +221,61 @@ class PaymentService:
     @staticmethod
     def _new_provider_order_id(provider: str, order_id: int) -> str:
         return f"order_{provider}_{order_id}_{uuid4().hex[:12]}"
+
+    def _create_provider_order_id(self, provider: str, order: Order) -> str:
+        if provider == "razorpay":
+            return self._create_razorpay_order(order)
+        return self._new_provider_order_id(provider, order.id)
+
+    def _create_razorpay_order(self, order: Order) -> str:
+        payload = {
+            "amount": self._amount_to_subunits(order.final_amount),
+            "currency": settings.PAYMENT_CURRENCY,
+            "receipt": f"rvbz_order_{order.id}",
+            "notes": {
+                "ravabazar_order_id": str(order.id),
+                "ravabazar_user_id": str(order.user_id),
+            },
+        }
+
+        try:
+            with httpx.Client(timeout=15.0) as client:
+                response = client.post(
+                    "https://api.razorpay.com/v1/orders",
+                    json=payload,
+                    auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET),
+                )
+                response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Razorpay order creation failed.",
+            ) from exc
+        except httpx.RequestError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Could not reach Razorpay while creating payment order.",
+            ) from exc
+
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Razorpay returned an invalid order response.",
+            ) from exc
+
+        provider_order_id = data.get("id")
+        if not isinstance(provider_order_id, str) or not provider_order_id:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Razorpay order response did not include an order id.",
+            )
+        return provider_order_id
+
+    @staticmethod
+    def _amount_to_subunits(amount: float) -> int:
+        return int(round(amount * 100))
 
     @staticmethod
     def _provider_public_key(provider: str) -> str:
@@ -226,7 +294,7 @@ class PaymentService:
         return settings.CASHFREE_WEBHOOK_SECRET or settings.CASHFREE_SECRET_KEY
 
     def _ensure_provider_can_create_order(self, provider: str) -> None:
-        if not self._provider_public_key(provider):
+        if not self._provider_public_key(provider) or not self._provider_secret(provider):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Payment provider is not configured.",

@@ -26,6 +26,17 @@ class Settings(BaseSettings):
     CASHFREE_SECRET_KEY: str = ""
     CASHFREE_WEBHOOK_SECRET: str = ""
 
+    COURIER_PROVIDER: str = "manual"
+    SHIPROCKET_BASE_URL: str = "https://apiv2.shiprocket.in/v1/external"
+    SHIPROCKET_EMAIL: str = ""
+    SHIPROCKET_PASSWORD: str = ""
+    SHIPROCKET_PICKUP_LOCATION: str = ""
+    SHIPROCKET_WEBHOOK_SECRET: str = ""
+    SHIPROCKET_DEFAULT_LENGTH_CM: float = 10.0
+    SHIPROCKET_DEFAULT_BREADTH_CM: float = 10.0
+    SHIPROCKET_DEFAULT_HEIGHT_CM: float = 5.0
+    SHIPROCKET_DEFAULT_WEIGHT_KG: float = 0.5
+
     CLOUDINARY_CLOUD_NAME: str = ""
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""

@@ -1,9 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Menu, User, Search, Bell } from 'lucide-react';
+import { ShoppingCart, User, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { useWishlistStore } from '@/store/wishlistStore';
@@ -35,7 +34,7 @@ export function Navbar() {
             <span className="text-sm font-bold leading-tight line-clamp-1">
               Hi, {user?.first_name || 'Guest'}
             </span>
-            <span className="text-xs text-muted-foreground">Let's go shopping</span>
+            <span className="text-xs text-muted-foreground">Let&apos;s go shopping</span>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <Button 

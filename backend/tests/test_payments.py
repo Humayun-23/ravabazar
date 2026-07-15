@@ -20,6 +20,8 @@ from app.models.payments import Payment
 from app.models.products import Product, ProductStatus
 from app.models.shipments import Shipment
 from app.models.users import User
+from app.services import payments as payment_service_module
+from app.services.payments import PaymentService
 
 
 @pytest.fixture()
@@ -169,7 +171,19 @@ def test_create_payment_order_uses_backend_order_amount(
     user,
     auth_headers,
     product,
+    monkeypatch,
 ):
+    created_provider_orders = []
+
+    def fake_create_razorpay_order(self, order):
+        created_provider_orders.append(order.final_amount)
+        return "order_rzp_test"
+
+    monkeypatch.setattr(
+        PaymentService,
+        "_create_razorpay_order",
+        fake_create_razorpay_order,
+    )
     order = make_order(db_session, user, product)
 
     response = client.post(
@@ -189,11 +203,113 @@ def test_create_payment_order_uses_backend_order_amount(
         "order_id": data["provider_order_id"],
         "amount": 18000,
         "currency": "INR",
+        "name": "Ravabazar",
+        "description": f"Order #{order.id}",
     }
+    assert data["provider_order_id"] == "order_rzp_test"
+    assert created_provider_orders == [180.0]
 
     payment = db_session.query(Payment).filter_by(order_id=order.id).one()
     assert payment.amount == 180.0
     assert payment.status == "created"
+    assert payment.provider_order_id == "order_rzp_test"
+
+
+def test_create_payment_order_reuses_existing_created_provider_order(
+    client,
+    db_session,
+    user,
+    auth_headers,
+    product,
+    monkeypatch,
+):
+    def fail_if_called(self, order):
+        raise AssertionError("Existing created payments should not create a new provider order")
+
+    monkeypatch.setattr(
+        PaymentService,
+        "_create_razorpay_order",
+        fail_if_called,
+    )
+    order = make_order(db_session, user, product)
+    payment = Payment(
+        order_id=order.id,
+        provider="razorpay",
+        provider_order_id="order_existing",
+        amount=order.final_amount,
+        status="created",
+    )
+    db_session.add(payment)
+    db_session.commit()
+
+    response = client.post(
+        "/api/v1/payments/create-order",
+        json={"order_id": order.id, "provider": "razorpay"},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 201
+    assert response.json()["provider_order_id"] == "order_existing"
+
+
+def test_create_razorpay_order_posts_backend_amount_and_auth(
+    db_session,
+    user,
+    product,
+    monkeypatch,
+):
+    order = make_order(db_session, user, product)
+    calls = []
+
+    class FakeRazorpayResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"id": "order_live_123"}
+
+    class FakeHttpxClient:
+        def __init__(self, *, timeout):
+            self.timeout = timeout
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def post(self, url, *, json, auth):
+            calls.append(
+                {
+                    "timeout": self.timeout,
+                    "url": url,
+                    "json": json,
+                    "auth": auth,
+                }
+            )
+            return FakeRazorpayResponse()
+
+    monkeypatch.setattr(payment_service_module.httpx, "Client", FakeHttpxClient)
+
+    provider_order_id = PaymentService(db_session)._create_razorpay_order(order)
+
+    assert provider_order_id == "order_live_123"
+    assert calls == [
+        {
+            "timeout": 15.0,
+            "url": "https://api.razorpay.com/v1/orders",
+            "json": {
+                "amount": 18000,
+                "currency": "INR",
+                "receipt": f"rvbz_order_{order.id}",
+                "notes": {
+                    "ravabazar_order_id": str(order.id),
+                    "ravabazar_user_id": str(user.id),
+                },
+            },
+            "auth": ("rzp_test_key", "razorpay_secret"),
+        }
+    ]
 
 
 def test_create_payment_order_rejects_non_pending_order(

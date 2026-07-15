@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Phone, Lock, LogIn } from 'lucide-react';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function LoginPage() {
   const [phone, setPhone] = useState('');
@@ -52,8 +53,8 @@ export default function LoginPage() {
 
         router.push('/account');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to login');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to login'));
     } finally {
       setLoading(false);
     }

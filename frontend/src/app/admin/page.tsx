@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '@/services/api';
 import { DashboardStats } from '@/types/admin';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -14,8 +15,8 @@ export default function AdminDashboardPage() {
       try {
         const data = await adminApi.getDashboardStats();
         setStats(data);
-      } catch (err: any) {
-        setError('Failed to load dashboard statistics.');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to load dashboard statistics.'));
       } finally {
         setIsLoading(false);
       }
@@ -28,7 +29,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-        <p className="text-muted-foreground mt-1">Here's what's happening with your store today.</p>
+        <p className="text-muted-foreground mt-1">Here&apos;s what&apos;s happening with your store today.</p>
       </div>
 
       {isLoading ? (

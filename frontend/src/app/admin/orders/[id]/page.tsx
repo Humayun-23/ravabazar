@@ -1,43 +1,63 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { adminApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
+import { getErrorMessage } from '@/lib/errors';
+import { Order } from '@/types/order';
 
 export default function AdminOrderDetailPage({ params }: { params: { id: string } }) {
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCreatingShipment, setIsCreatingShipment] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
 
-  useEffect(() => {
-    fetchOrder();
-  }, [params.id]);
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await adminApi.getOrderById(Number(params.id));
       setOrder(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load order details');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to load order details'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      fetchOrder();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchOrder]);
 
   const handleStatusChange = async (newStatus: string) => {
     try {
       setIsUpdating(true);
       const updatedOrder = await adminApi.updateOrderStatus(Number(params.id), newStatus);
       setOrder(updatedOrder);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update order status');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to update order status'));
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleCreateShiprocketShipment = async () => {
+    try {
+      setError('');
+      setIsCreatingShipment(true);
+      await adminApi.createShipment({
+        order_id: Number(params.id),
+        provider: 'shiprocket',
+      });
+      await fetchOrder();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to create Shiprocket shipment'));
+    } finally {
+      setIsCreatingShipment(false);
     }
   };
 
@@ -83,10 +103,15 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
             disabled={isUpdating}
           >
             <option value="pending_payment">Pending Payment</option>
+            <option value="paid">Paid</option>
+            <option value="cod_pending">COD Pending</option>
             <option value="processing">Processing</option>
+            <option value="packed">Packed</option>
             <option value="shipped">Shipped</option>
             <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
+            <option value="returned">Returned</option>
+            <option value="refunded">Refunded</option>
           </select>
         </div>
       </div>
@@ -96,7 +121,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
           <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
             <div className="p-4 border-b bg-muted/20 font-medium">Order Items</div>
             <div className="divide-y divide-border">
-              {order.items.map((item: any) => (
+              {order.items.map((item) => (
                 <div key={item.id} className="p-4 flex gap-4">
                   <div className="w-16 h-16 bg-muted rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
                     <span className="text-2xl">📦</span>
@@ -160,6 +185,74 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="bg-card border rounded-xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Shipment</h3>
+              {order.status === 'packed' && !order.shipment && (
+                <Button
+                  size="sm"
+                  onClick={handleCreateShiprocketShipment}
+                  disabled={isCreatingShipment}
+                >
+                  {isCreatingShipment ? 'Creating...' : 'Create Shiprocket'}
+                </Button>
+              )}
+            </div>
+
+            {order.shipment ? (
+              <div className="text-sm space-y-2">
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Provider</span>
+                  <span className="font-medium capitalize">{order.shipment.provider || 'manual'}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Status</span>
+                  <span className="font-medium capitalize">{order.shipment.status || 'processing'}</span>
+                </div>
+                {(order.shipment.awb_number || order.shipment.tracking_number) && (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">AWB</span>
+                    <span className="font-medium text-right break-all">
+                      {order.shipment.awb_number || order.shipment.tracking_number}
+                    </span>
+                  </div>
+                )}
+                {(order.shipment.courier_company || order.shipment.courier_name) && (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Courier</span>
+                    <span className="font-medium text-right">
+                      {order.shipment.courier_company || order.shipment.courier_name}
+                    </span>
+                  </div>
+                )}
+                {order.shipment.tracking_url && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    nativeButton={false}
+                    render={<a href={order.shipment.tracking_url} target="_blank" rel="noreferrer" />}
+                  >
+                    Track Shipment
+                  </Button>
+                )}
+                {order.shipment.label_url && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    nativeButton={false}
+                    render={<a href={order.shipment.label_url} target="_blank" rel="noreferrer" />}
+                  >
+                    Open Label
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {order.status === 'packed' ? 'Ready for shipment creation.' : 'No shipment yet.'}
+              </p>
+            )}
           </div>
         </div>
       </div>

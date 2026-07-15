@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Phone, Lock, User, UserPlus } from 'lucide-react';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -35,8 +36,8 @@ export default function RegisterPage() {
       setTimeout(() => {
         router.push('/login');
       }, 2000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to register');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to register'));
     } finally {
       setLoading(false);
     }

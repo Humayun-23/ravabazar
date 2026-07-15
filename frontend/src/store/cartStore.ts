@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import { Cart } from '@/types/cart';
 import { fetchApi } from '@/services/api';
 
+interface AppliedCoupon {
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  min_order_value: number;
+}
+
 interface CartState {
   cart: Cart | null;
   isOpen: boolean;
@@ -14,7 +21,7 @@ interface CartState {
   addToCart: (product_id: number, quantity: number) => Promise<void>;
   updateCartItem: (item_id: number, quantity: number) => Promise<void>;
   removeCartItem: (item_id: number) => Promise<void>;
-  coupon: any | null;
+  coupon: AppliedCoupon | null;
   discountAmount: number;
   applyCoupon: (code: string) => Promise<void>;
   removeCoupon: () => void;

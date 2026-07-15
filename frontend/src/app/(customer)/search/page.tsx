@@ -13,6 +13,25 @@ import Link from 'next/link';
 
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%2364748b'%3ENo Image%3C/text%3E%3C/svg%3E";
 
+function getStoredRecentSearches(): string[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  const stored = localStorage.getItem('recentSearches');
+  if (!stored) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch (error) {
+    console.error('Failed to parse recent searches', error);
+    return [];
+  }
+}
+
 export default function SearchPage() {
   return (
     <Suspense fallback={<SearchSkeleton />}>
@@ -47,21 +66,7 @@ function SearchContent() {
   
   const [query, setQuery] = useState(initialQuery);
   const [activeQuery, setActiveQuery] = useState(initialQuery);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-
-  // Load recent searches from local storage on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('recentSearches');
-      if (stored) {
-        try {
-          setRecentSearches(JSON.parse(stored));
-        } catch (e) {
-          console.error("Failed to parse recent searches", e);
-        }
-      }
-    }
-  }, []);
+  const [recentSearches, setRecentSearches] = useState<string[]>(getStoredRecentSearches);
 
   // Save recent searches when it changes
   useEffect(() => {
@@ -251,7 +256,7 @@ function SearchContent() {
         // Search Results State
         <div className="animate-in fade-in duration-300">
           <h2 className="text-lg font-bold text-foreground mb-6">
-            Search Results for "{activeQuery}"
+            Search Results for &quot;{activeQuery}&quot;
           </h2>
           
           {isLoadingSearch ? (
@@ -275,7 +280,7 @@ function SearchContent() {
               <Search className="w-16 h-16 text-muted-foreground/30 mb-4" />
               <h3 className="text-xl font-bold mb-2">No results found</h3>
               <p className="text-muted-foreground max-w-sm">
-                We couldn't find any products matching "{activeQuery}". Try adjusting your search terms.
+                We couldn&apos;t find any products matching &quot;{activeQuery}&quot;. Try adjusting your search terms.
               </p>
               <button 
                 onClick={() => {

@@ -25,8 +25,19 @@ RAZORPAY_WEBHOOK_SECRET
 CASHFREE_APP_ID
 CASHFREE_SECRET_KEY
 CASHFREE_WEBHOOK_SECRET
+COURIER_PROVIDER
+SHIPROCKET_BASE_URL
+SHIPROCKET_EMAIL
+SHIPROCKET_PASSWORD
+SHIPROCKET_PICKUP_LOCATION
+SHIPROCKET_WEBHOOK_SECRET
+SHIPROCKET_DEFAULT_LENGTH_CM
+SHIPROCKET_DEFAULT_BREADTH_CM
+SHIPROCKET_DEFAULT_HEIGHT_CM
+SHIPROCKET_DEFAULT_WEIGHT_KG
 ```
 
 Production must use a strong `JWT_SECRET`, must restrict `CORS_ORIGINS` to the
 deployed frontend domains, must configure live payment provider credentials
-before enabling online payments, and must not expose PostgreSQL publicly.
+before enabling online payments, must configure Shiprocket before creating
+provider shipments, and must not expose PostgreSQL publicly.

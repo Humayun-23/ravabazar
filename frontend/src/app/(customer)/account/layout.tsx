@@ -4,11 +4,15 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUserStore } from '@/store/userStore';
 import Link from 'next/link';
-import { User, MapPin, Package, LogOut, Settings } from 'lucide-react';
+import { MapPin, Package, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 
-const navigation = [
+const navigation: Array<{
+  name: string;
+  href: string;
+  icon: typeof Settings;
+  className?: string;
+}> = [
   { name: 'Settings', href: '/account', icon: Settings },
   { name: 'Orders', href: '/account/orders', icon: Package, className: 'hidden md:flex' },
   { name: 'Addresses', href: '/account/addresses', icon: MapPin },
@@ -21,7 +25,7 @@ export default function AccountLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useUserStore();
+  const { isAuthenticated, logout } = useUserStore();
 
   useEffect(() => {
     // Basic client-side protection (real protection should also happen in middleware or components that fetch)
@@ -61,7 +65,7 @@ export default function AccountLayout({
                     isActive 
                       ? "bg-primary text-primary-foreground" 
                       : "hover:bg-muted text-muted-foreground hover:text-foreground",
-                    (item as any).className
+                    item.className
                   )}
                 >
                   <Icon className="w-4 h-4 shrink-0" />

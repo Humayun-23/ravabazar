@@ -111,6 +111,7 @@ class ProductDetailPublic(BaseModel):
     is_featured: bool
     category: Optional[CategoryBasic] = None
     images: List[ProductImageBasic] = []
+    available_stock: int
     created_at: datetime
     updated_at: datetime
 

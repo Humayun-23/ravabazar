@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { adminApi } from '@/services/api';
 import { User } from '@/types/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { getErrorMessage } from '@/lib/errors';
 
 interface CustomersResponse {
   items: User[];
@@ -23,22 +24,25 @@ export default function AdminCustomersPage() {
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       const res = await adminApi.getCustomers({ page, page_size: 10, search });
       setData(res);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch customers');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to fetch customers'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search]);
 
   useEffect(() => {
-    fetchCustomers();
-  }, [page, search]);
+    const timeoutId = window.setTimeout(() => {
+      fetchCustomers();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchCustomers]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

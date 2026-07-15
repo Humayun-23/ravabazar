@@ -3,19 +3,71 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { fetchApi } from '@/services/api';
+import { fetchApi, paymentApi, PaymentCreateOrderResponse } from '@/services/api';
 import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { Address } from '@/types/address';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, CreditCard, ArrowRight, CheckCircle2, Package, Lock, X, Check, Building2, Home, Navigation, Map } from 'lucide-react';
+import { MapPin, CreditCard, CheckCircle2, Package, Lock, X, Check, Building2, Home, Map } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errors';
 
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%2364748b'%3ENo Image%3C/text%3E%3C/svg%3E";
+
+interface OrderCreationResponse {
+  id: number;
+}
+
+interface RazorpayCheckoutResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayFailureResponse {
+  error?: {
+    description?: string;
+  };
+}
+
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name?: string;
+  description?: string;
+  order_id: string;
+  prefill?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  theme?: {
+    color?: string;
+  };
+  modal?: {
+    ondismiss?: () => void;
+  };
+  handler: (response: RazorpayCheckoutResponse) => void;
+}
+
+interface RazorpayInstance {
+  open: () => void;
+  on: (
+    event: 'payment.failed',
+    callback: (response: RazorpayFailureResponse) => void,
+  ) => void;
+}
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayOptions) => RazorpayInstance;
+  }
+}
 
 const getAddressIcon = (title: string) => {
   const t = title.toLowerCase();
@@ -24,14 +76,47 @@ const getAddressIcon = (title: string) => {
   return <Map className="w-5 h-5" />;
 };
 
+const createIdempotencyKey = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
+const loadRazorpayCheckout = () => new Promise<void>((resolve, reject) => {
+  if (typeof window === 'undefined') {
+    reject(new Error('Razorpay checkout can only be opened in the browser.'));
+    return;
+  }
+  if (window.Razorpay) {
+    resolve();
+    return;
+  }
+
+  const existingScript = document.getElementById('razorpay-checkout-js') as HTMLScriptElement | null;
+  if (existingScript) {
+    existingScript.addEventListener('load', () => resolve(), { once: true });
+    existingScript.addEventListener('error', () => reject(new Error('Failed to load Razorpay checkout.')), { once: true });
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.id = 'razorpay-checkout-js';
+  script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+  script.async = true;
+  script.onload = () => resolve();
+  script.onerror = () => reject(new Error('Failed to load Razorpay checkout.'));
+  document.body.appendChild(script);
+});
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, isLoading: isCartLoading, fetchCart, coupon, discountAmount, applyCoupon, removeCoupon } = useCartStore();
-  const { isAuthenticated } = useUserStore();
+  const { isAuthenticated, user } = useUserStore();
   
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>('cod');
-  const [idempotencyKey, setIdempotencyKey] = useState<string>('');
+  const [idempotencyKey] = useState<string>(createIdempotencyKey);
   const [orderSuccess, setOrderSuccess] = useState<number | null>(null);
   const [error, setError] = useState('');
   
@@ -45,8 +130,8 @@ export default function CheckoutPage() {
     try {
       await applyCoupon(couponCode.trim().toUpperCase());
       setCouponCode('');
-    } catch (err: any) {
-      setCouponError(err.message || 'Invalid coupon code');
+    } catch (err) {
+      setCouponError(getErrorMessage(err, 'Invalid coupon code'));
     }
   };
 
@@ -55,7 +140,6 @@ export default function CheckoutPage() {
       router.push('/login?redirect=/checkout');
     } else {
       fetchCart();
-      setIdempotencyKey(crypto.randomUUID());
     }
   }, [isAuthenticated, router, fetchCart]);
 
@@ -65,36 +149,85 @@ export default function CheckoutPage() {
     enabled: isAuthenticated,
   });
 
-  useEffect(() => {
-    if (addresses.length > 0 && !selectedAddressId) {
-      const defaultAddr = addresses.find(a => a.is_default);
-      setSelectedAddressId(defaultAddr ? defaultAddr.id : addresses[0].id);
-    }
-  }, [addresses, selectedAddressId]);
+  const defaultAddressId = addresses.find(a => a.is_default)?.id ?? addresses[0]?.id ?? null;
+  const activeAddressId = selectedAddressId ?? defaultAddressId;
 
-  const placeOrderMutation = useMutation({
-    mutationFn: () => fetchApi('/orders', {
+  const createCustomerOrder = async (): Promise<OrderCreationResponse> => fetchApi('/orders', {
       method: 'POST',
       headers: {
         'Idempotency-Key': idempotencyKey,
       },
       body: JSON.stringify({
-        address_id: selectedAddressId,
+        address_id: activeAddressId,
         payment_method: paymentMethod,
         coupon_code: coupon ? coupon.code : null,
       }),
-    }),
+    });
+
+  const openRazorpayPayment = (
+    orderId: number,
+    paymentOrder: PaymentCreateOrderResponse,
+  ) => new Promise<void>((resolve, reject) => {
+    if (!window.Razorpay) {
+      reject(new Error('Razorpay checkout is not available. Please try again.'));
+      return;
+    }
+    let dismissMessage = 'Payment was cancelled. Your order is still pending payment.';
+
+    const checkout = new window.Razorpay({
+      ...paymentOrder.client_payload,
+      prefill: {
+        name: [user?.first_name, user?.last_name].filter(Boolean).join(' ') || undefined,
+        email: user?.email || undefined,
+        contact: user?.phone || undefined,
+      },
+      theme: {
+        color: '#facc15',
+      },
+      modal: {
+        ondismiss: () => reject(new Error(dismissMessage)),
+      },
+      handler: (response) => {
+        void paymentApi.verifyRazorpayPayment({
+          order_id: orderId,
+          provider: 'razorpay',
+          provider_order_id: response.razorpay_order_id,
+          provider_payment_id: response.razorpay_payment_id,
+          signature: response.razorpay_signature,
+        }).then(() => resolve()).catch(reject);
+      },
+    });
+
+    checkout.on('payment.failed', (response) => {
+      dismissMessage = response.error?.description || 'Payment failed. Please try again.';
+    });
+
+    checkout.open();
+  });
+
+  const placeOrderMutation = useMutation({
+    mutationFn: async () => {
+      const order = await createCustomerOrder();
+      if (paymentMethod !== 'razorpay') {
+        return order;
+      }
+
+      const paymentOrder = await paymentApi.createRazorpayOrder(order.id);
+      await loadRazorpayCheckout();
+      await openRazorpayPayment(order.id, paymentOrder);
+      return order;
+    },
     onSuccess: (data) => {
-      useCartStore.getState().fetchCart();
+      void useCartStore.getState().fetchCart();
       setOrderSuccess(data.id);
     },
-    onError: (err: any) => {
-      setError(err.message || 'Failed to place order');
+    onError: (err) => {
+      setError(getErrorMessage(err, 'Failed to place order'));
     }
   });
 
   const handlePlaceOrder = () => {
-    if (!selectedAddressId) {
+    if (!activeAddressId) {
       setError('Please select a delivery address');
       return;
     }
@@ -157,7 +290,7 @@ export default function CheckoutPage() {
       <div className="container mx-auto px-4 max-w-lg text-center py-24 bg-card mt-12 rounded-3xl border shadow-xl shadow-black/5">
         <Package className="w-20 h-20 text-muted-foreground/50 mx-auto mb-6" />
         <h2 className="text-2xl font-bold text-foreground mb-4">Your cart is empty</h2>
-        <p className="text-muted-foreground font-medium mb-8">Looks like you haven't added anything to your cart yet.</p>
+        <p className="text-muted-foreground font-medium mb-8">Looks like you haven&apos;t added anything to your cart yet.</p>
         <Button render={<Link href="/products" />} nativeButton={false} className="h-12 rounded-xl font-bold px-8 shadow-lg shadow-primary/20">
           Return to Shop
         </Button>
@@ -206,7 +339,7 @@ export default function CheckoutPage() {
             ) : addresses.length === 0 ? (
               <div className="text-center py-10 bg-muted/30 border border-dashed rounded-2xl">
                 <MapPin className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-                <p className="text-muted-foreground font-medium mb-6">You don't have any saved addresses.</p>
+                <p className="text-muted-foreground font-medium mb-6">You don&apos;t have any saved addresses.</p>
                 <Button render={<Link href="/account/addresses" />} nativeButton={false} variant="outline" className="h-12 rounded-xl font-bold border-2">
                   Add New Address
                 </Button>
@@ -218,7 +351,7 @@ export default function CheckoutPage() {
                     key={addr.id} 
                     className={cn(
                       "relative flex flex-col p-5 border rounded-2xl cursor-pointer transition-all duration-200",
-                      selectedAddressId === addr.id 
+                      activeAddressId === addr.id 
                         ? "border-primary bg-primary/5 ring-1 ring-primary shadow-md" 
                         : "hover:border-primary/50 hover:bg-muted/30 hover:shadow-sm"
                     )}
@@ -227,7 +360,7 @@ export default function CheckoutPage() {
                       type="radio" 
                       name="address" 
                       value={addr.id} 
-                      checked={selectedAddressId === addr.id}
+                      checked={activeAddressId === addr.id}
                       onChange={() => setSelectedAddressId(addr.id)}
                       className="sr-only"
                     />
@@ -235,15 +368,15 @@ export default function CheckoutPage() {
                     <div className="flex justify-between items-start mb-4">
                       <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-colors",
-                        selectedAddressId === addr.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        activeAddressId === addr.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                       )}>
                         {getAddressIcon(addr.title)}
                       </div>
                       <div className={cn(
                         "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
-                        selectedAddressId === addr.id ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"
+                        activeAddressId === addr.id ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"
                       )}>
-                        {selectedAddressId === addr.id && <Check className="w-3.5 h-3.5" />}
+                        {activeAddressId === addr.id && <Check className="w-3.5 h-3.5" />}
                       </div>
                     </div>
                     
@@ -274,7 +407,7 @@ export default function CheckoutPage() {
           {/* Step 2: Payment Method */}
           <section className={cn(
             "bg-card border shadow-xl shadow-black/5 rounded-3xl p-6 md:p-8 transition-opacity duration-300",
-            !selectedAddressId ? "opacity-50 pointer-events-none" : "opacity-100"
+            !activeAddressId ? "opacity-50 pointer-events-none" : "opacity-100"
           )}>
             <div className="flex items-center gap-4 mb-6 pb-4 border-b">
               <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">2</div>
@@ -453,10 +586,10 @@ export default function CheckoutPage() {
             <Button 
               className={cn(
                 "w-full h-14 text-lg font-bold rounded-xl shadow-lg transition-all duration-300",
-                !selectedAddressId ? "opacity-50 cursor-not-allowed" : "shadow-primary/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/30"
+                !activeAddressId ? "opacity-50 cursor-not-allowed" : "shadow-primary/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/30"
               )}
               onClick={handlePlaceOrder}
-              disabled={placeOrderMutation.isPending || !selectedAddressId}
+              disabled={placeOrderMutation.isPending || !activeAddressId}
             >
               {placeOrderMutation.isPending ? 'Processing Securely...' : 'Place Order Securely'}
               {!placeOrderMutation.isPending && <Lock className="w-5 h-5 ml-2" />}

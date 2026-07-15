@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function NewCouponPage() {
   const router = useRouter();
@@ -38,8 +39,8 @@ export default function NewCouponPage() {
 
       await adminApi.createCoupon(payload);
       router.push('/admin/coupons');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create coupon');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to create coupon'));
       setLoading(false);
     }
   };
