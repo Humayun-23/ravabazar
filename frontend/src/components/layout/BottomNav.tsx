@@ -10,7 +10,7 @@ export function BottomNav() {
   const navItems = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'My Order', href: '/account/orders', icon: ShoppingBag },
-    { name: 'Favorite', href: '/account/favorites', icon: Heart }, // We may not have favorites yet, link to account/favorites
+    { name: 'Favorite', href: '/account/favorites', icon: Heart },
     { name: 'Settings', href: '/account', icon: Settings },
   ];
 

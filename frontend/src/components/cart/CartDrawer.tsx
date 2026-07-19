@@ -51,18 +51,21 @@ export function CartDrawer() {
         </SheetHeader>
 
         {items.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-            <ShoppingBag className="mb-4 h-12 w-12 text-muted-foreground/60" />
-            <p className="font-semibold">Your cart is empty</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Add products to start your order.
+          <div className="flex flex-1 flex-col items-center justify-center px-6 text-center py-16">
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
+              <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-foreground">Your cart is empty</h3>
+            <p className="text-muted-foreground mb-8 max-w-[250px]">
+              Looks like you haven't added anything to your cart yet.
             </p>
             <Button
-              className="mt-6"
+              size="lg"
+              className="rounded-full px-8 font-bold"
               render={<Link href="/products" onClick={() => setIsOpen(false)} />}
               nativeButton={false}
             >
-              Continue Shopping
+              Start Shopping
             </Button>
           </div>
         ) : (

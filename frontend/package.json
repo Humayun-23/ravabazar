@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:mobile": "next build && cd ../mobile/capacitor && npx cap sync android",
     "start": "next start",
     "lint": "eslint"
   },
