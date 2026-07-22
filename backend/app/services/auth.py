@@ -1,5 +1,8 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+import uuid
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 import app.models  # noqa: F401
 from app.core.config import settings
@@ -16,7 +19,7 @@ from app.repositories.admins import AdminRepository
 from app.repositories.refresh_tokens import RefreshTokenRepository
 from app.repositories.users import UserRepository
 from app.schemas.admins import AdminCreate
-from app.schemas.auth import AdminLoginRequest, CustomerLoginRequest
+from app.schemas.auth import AdminLoginRequest, CustomerLoginRequest, GoogleLoginRequest
 from app.schemas.users import UserCreate
 
 
@@ -27,12 +30,14 @@ class AuthService:
         self.admins = AdminRepository(db)
         self.refresh_tokens = RefreshTokenRepository(db)
 
-    def register_customer(self, payload: UserCreate) -> User:
+    def register_customer(self, payload: UserCreate, background_tasks=None) -> User:
         if self.users.get_by_phone(payload.phone):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="A customer with this phone already exists.",
             )
+
+        verification_token = str(uuid.uuid4())
 
         user = self.users.create(
             phone=payload.phone,
@@ -41,8 +46,21 @@ class AuthService:
             first_name=payload.first_name,
             last_name=payload.last_name,
         )
+        user.verification_token = verification_token
+        user.is_email_verified = False
+        
         self.db.commit()
         self.db.refresh(user)
+        
+        if payload.email and background_tasks:
+            from app.services.email import EmailService
+            background_tasks.add_task(
+                EmailService.send_verification_email,
+                email=payload.email,
+                token=verification_token,
+                first_name=payload.first_name or "Customer"
+            )
+            
         return user
 
     def authenticate_customer(self, payload: CustomerLoginRequest) -> User:
@@ -58,6 +76,83 @@ class AuthService:
                 detail="Customer account is inactive.",
             )
         return user
+
+    def authenticate_google(self, payload: GoogleLoginRequest) -> User:
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                payload.token, requests.Request(), settings.GOOGLE_CLIENT_ID
+            )
+            email = idinfo.get("email")
+            google_id = idinfo.get("sub")
+            first_name = idinfo.get("given_name", "")
+            last_name = idinfo.get("family_name", "")
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Google token.",
+            )
+
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Google token does not contain an email.",
+            )
+
+        user = self.db.query(User).filter(User.email == email).first()
+
+        if user:
+            if not user.google_id:
+                user.google_id = google_id
+                self.db.commit()
+            if not user.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Customer account is inactive.",
+                )
+            return user
+        
+        if not payload.phone:
+            raise HTTPException(
+                status_code=status.HTTP_428_PRECONDITION_REQUIRED,
+                detail="Phone number is required to complete registration.",
+            )
+
+        existing_phone = self.users.get_by_phone(payload.phone)
+        if existing_phone:
+            if not existing_phone.google_id:
+                existing_phone.google_id = google_id
+                if not existing_phone.email:
+                    existing_phone.email = email
+                self.db.commit()
+                return existing_phone
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This phone number is already associated with another account.",
+                )
+
+        user = self.users.create(
+            phone=payload.phone,
+            email=email,
+            hashed_password=None,
+            first_name=first_name,
+            last_name=last_name,
+        )
+        user.google_id = google_id
+        user.is_email_verified = True
+        self.db.commit()
+        self.db.refresh(user)
+
+        return user
+
+    def verify_email(self, token: str) -> bool:
+        user = self.db.query(User).filter(User.verification_token == token).first()
+        if not user:
+            return False
+        user.is_email_verified = True
+        user.verification_token = None
+        self.db.commit()
+        return True
 
     def authenticate_admin(self, payload: AdminLoginRequest) -> Admin:
         admin = self.admins.get_by_email(payload.email)

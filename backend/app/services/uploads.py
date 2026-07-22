@@ -6,8 +6,10 @@ from app.schemas.uploads import ImageUploadResponse
 try:
     import cloudinary
     import cloudinary.uploader
+    from cloudinary.exceptions import Error as CloudinaryError
 except ImportError:  # pragma: no cover - exercised when local deps are incomplete
     cloudinary = None
+    CloudinaryError = Exception
 
 
 class CloudinaryUploadService:
@@ -54,6 +56,6 @@ class CloudinaryUploadService:
                 provider="cloudinary"
             )
             
-        except Exception as e:
+        except CloudinaryError as e:
             # Log the exception in a real application
             raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")

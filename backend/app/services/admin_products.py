@@ -1,6 +1,7 @@
 import math
 from typing import Optional
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 import re
 
@@ -84,10 +85,10 @@ class AdminProductService:
         try:
             new_product = self.repo.create_product(product_data, inventory_data, images_data)
             return self.public_service._format_product_detail(new_product)
-        except Exception as e:
+        except IntegrityError as e:
             # e.g., SKU unique constraint failure
             self.db.rollback()
-            raise HTTPException(status_code=409, detail=f"Database constraint error: {str(e)}")
+            raise HTTPException(status_code=409, detail=f"Database constraint error: {str(e.orig)}")
 
     def update_product(self, id: int, data: AdminProductUpdate) -> ProductDetailPublic:
         product = self.repo.get_product_by_id_admin(id)
@@ -106,9 +107,9 @@ class AdminProductService:
         try:
             updated_product = self.repo.update_product(product, update_data, inventory_data, images_data)
             return self.public_service._format_product_detail(updated_product)
-        except Exception as e:
+        except IntegrityError as e:
             self.db.rollback()
-            raise HTTPException(status_code=409, detail=f"Database constraint error: {str(e)}")
+            raise HTTPException(status_code=409, detail=f"Database constraint error: {str(e.orig)}")
 
     def delete_product(self, id: int):
         product = self.repo.get_product_by_id_admin(id)
@@ -117,7 +118,7 @@ class AdminProductService:
         
         try:
             self.repo.delete_product(product)
-        except Exception as e:
+        except IntegrityError as e:
             # If constrained by orders, deactivate instead of hard delete
             self.db.rollback()
             product = self.repo.get_product_by_id_admin(id)

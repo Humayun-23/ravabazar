@@ -2,7 +2,7 @@ import hashlib
 import json
 import math
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.models.inventory import Inventory
@@ -13,6 +13,7 @@ from app.repositories.carts import CartRepository
 from app.repositories.orders import OrderRepository
 from app.repositories.coupons import CouponRepository
 from app.schemas.orders import CheckoutRequest, OrderListResponse
+from app.services.email import EmailService
 from datetime import datetime
 
 
@@ -40,6 +41,7 @@ class OrderService:
         user_id: int,
         payload: CheckoutRequest,
         idempotency_key: str,
+        background_tasks: BackgroundTasks = None,
     ) -> Order:
         idempotency_key = idempotency_key.strip()
         if not idempotency_key:
@@ -200,7 +202,19 @@ class OrderService:
 
         self.carts.delete_cart(cart)
         self.db.commit()
-        return self.orders.refresh_detail(order)
+        
+        order_refreshed = self.orders.refresh_detail(order)
+        
+        if payment_method == "cod" and background_tasks:
+            background_tasks.add_task(
+                EmailService.send_order_success_email,
+                email=order_refreshed.user.email,
+                first_name=order_refreshed.user.first_name,
+                order_id=order_refreshed.id,
+                amount=order_refreshed.final_amount
+            )
+            
+        return order_refreshed
 
     def list_my_orders(
         self,
@@ -232,7 +246,7 @@ class OrderService:
             )
         return order
 
-    def cancel_order(self, *, user_id: int, order_id: int, reason: str | None = None) -> Order:
+    def cancel_order(self, *, user_id: int, order_id: int, reason: str | None = None, background_tasks: BackgroundTasks = None) -> Order:
         order = self.get_my_order(user_id=user_id, order_id=order_id)
         if order.status not in CANCELLABLE_STATUSES:
             raise HTTPException(
@@ -259,7 +273,17 @@ class OrderService:
             
         self.db.add(order)
         self.db.commit()
-        return self.orders.refresh_detail(order)
+        
+        order_refreshed = self.orders.refresh_detail(order)
+        if background_tasks:
+            background_tasks.add_task(
+                EmailService.send_order_cancellation_email,
+                email=order_refreshed.user.email,
+                first_name=order_refreshed.user.first_name,
+                order_id=order_refreshed.id
+            )
+            
+        return order_refreshed
 
     @staticmethod
     def _address_snapshot(address) -> dict:

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -41,8 +41,9 @@ def get_admin_order(
 def update_admin_order_status(
     id: int,
     payload: AdminOrderStatusUpdate,
+    background_tasks: BackgroundTasks,
     current_admin=Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     service = AdminOrderService(db)
-    return service.update_status(id, payload)
+    return service.update_status(id, payload, background_tasks)

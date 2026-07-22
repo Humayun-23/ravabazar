@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 import re
 
@@ -39,9 +40,9 @@ class AdminCategoryService:
         try:
             new_cat = self.repo.create_category(cat_data)
             return CategoryWithChildren.model_validate(new_cat)
-        except Exception as e:
+        except IntegrityError as e:
             self.db.rollback()
-            raise HTTPException(status_code=409, detail=f"Database constraint error: {str(e)}")
+            raise HTTPException(status_code=409, detail=f"Database constraint error: {str(e.orig)}")
 
     def update_category(self, id: int, data: AdminCategoryUpdate) -> CategoryWithChildren:
         cat = self.repo.get_category_by_id(id)
@@ -56,6 +57,6 @@ class AdminCategoryService:
         try:
             updated_cat = self.repo.update_category(cat, update_data)
             return CategoryWithChildren.model_validate(updated_cat)
-        except Exception as e:
+        except IntegrityError as e:
             self.db.rollback()
-            raise HTTPException(status_code=409, detail=f"Database constraint error: {str(e)}")
+            raise HTTPException(status_code=409, detail=f"Database constraint error: {str(e.orig)}")

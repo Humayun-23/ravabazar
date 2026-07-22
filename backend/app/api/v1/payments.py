@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
@@ -39,18 +39,21 @@ def create_payment_order(
 @router.post("/verify", response_model=PaymentVerifyResponse)
 def verify_payment(
     payload: PaymentVerifyRequest,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     return PaymentService(db).verify(
         user_id=current_user.id,
         payload=payload,
+        background_tasks=background_tasks,
     )
 
 
 @router.post("/webhook", response_model=PaymentWebhookResponse)
 async def payment_webhook(
     request: Request,
+    background_tasks: BackgroundTasks,
     x_razorpay_signature: str | None = Header(None, alias="X-Razorpay-Signature"),
     x_cashfree_signature: str | None = Header(None, alias="X-Cashfree-Signature"),
     db: Session = Depends(get_db),
@@ -66,12 +69,14 @@ async def payment_webhook(
             provider="razorpay",
             signature=x_razorpay_signature,
             raw_body=raw_body,
+            background_tasks=background_tasks,
         )
     if x_cashfree_signature:
         return PaymentService(db).handle_webhook(
             provider="cashfree",
             signature=x_cashfree_signature,
             raw_body=raw_body,
+            background_tasks=background_tasks,
         )
 
     raise HTTPException(

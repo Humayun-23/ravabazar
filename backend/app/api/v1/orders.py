@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, Query, status
+from fastapi import APIRouter, Depends, Header, Query, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
@@ -21,6 +21,7 @@ def health_check():
 @router.post("", response_model=Order, status_code=status.HTTP_201_CREATED)
 def checkout(
     payload: CheckoutRequest,
+    background_tasks: BackgroundTasks,
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -29,6 +30,7 @@ def checkout(
         user_id=current_user.id,
         payload=payload,
         idempotency_key=idempotency_key,
+        background_tasks=background_tasks,
     )
 
 
@@ -62,6 +64,7 @@ def get_my_order(
 def cancel_my_order(
     order_id: int,
     payload: OrderCancelRequest,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -69,4 +72,5 @@ def cancel_my_order(
         user_id=current_user.id,
         order_id=order_id,
         reason=payload.reason,
+        background_tasks=background_tasks,
     )

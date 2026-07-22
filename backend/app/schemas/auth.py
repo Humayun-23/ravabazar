@@ -1,7 +1,13 @@
 from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
 
 from app.schemas.admins import Admin
 from app.schemas.users import User
+
+
+class GoogleLoginRequest(BaseModel):
+    token: str
+    phone: Optional[str] = Field(None, max_length=20)
 
 
 class CustomerLoginRequest(BaseModel):

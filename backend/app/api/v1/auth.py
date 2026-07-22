@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status, BackgroundTasks, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
@@ -6,6 +6,7 @@ from app.schemas.auth import (
     AccessTokenResponse,
     CustomerAuthResponse,
     CustomerLoginRequest,
+    GoogleLoginRequest,
     RefreshTokenRequest,
 )
 from app.schemas.users import User, UserCreate
@@ -19,8 +20,17 @@ def health_check():
 
 
 @router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
-def register_customer(payload: UserCreate, db: Session = Depends(get_db)):
-    return AuthService(db).register_customer(payload)
+def register_customer(payload: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    return AuthService(db).register_customer(payload, background_tasks)
+
+
+@router.post("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    service = AuthService(db)
+    success = service.verify_email(token)
+    if not success:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token.")
+    return {"message": "Email verified successfully"}
 
 
 @router.post("/login", response_model=CustomerAuthResponse)
@@ -29,6 +39,15 @@ def login_customer(payload: CustomerLoginRequest, db: Session = Depends(get_db))
     user = service.authenticate_customer(payload)
     tokens = service.create_token_pair(subject_id=user.id, subject_type="customer")
     return {**tokens, "user": user}
+
+
+@router.post("/google", response_model=CustomerAuthResponse)
+def login_google(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
+    service = AuthService(db)
+    user = service.authenticate_google(payload)
+    tokens = service.create_token_pair(subject_id=user.id, subject_type="customer")
+    return {**tokens, "user": user}
+
 
 
 @router.post("/refresh", response_model=AccessTokenResponse)

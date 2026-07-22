@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
 
+    GOOGLE_CLIENT_ID: str = ""
+
     PAYMENT_CURRENCY: str = "INR"
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
@@ -40,6 +42,16 @@ class Settings(BaseSettings):
     CLOUDINARY_CLOUD_NAME: str = ""
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
+
+    MAIL_USERNAME: str = ""
+    MAIL_PASSWORD: str = ""
+    MAIL_FROM: str = "noreply@ravabazar.com"
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "sandbox.smtp.mailtrap.io"
+    MAIL_STARTTLS: bool = True
+    MAIL_SSL_TLS: bool = False
+    
+    MAILTRAP_API_TOKEN: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:

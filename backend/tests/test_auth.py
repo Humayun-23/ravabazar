@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from unittest.mock import patch
 
 from app.core.dependencies import get_db
 from app.core.security import hash_password
@@ -222,3 +223,91 @@ def test_admin_login_rejects_inactive_admin(client, db_session):
     )
 
     assert response.status_code == 403
+
+
+@patch("app.services.auth.id_token.verify_oauth2_token")
+def test_google_login_new_user_requires_phone(mock_verify, client):
+    mock_verify.return_value = {
+        "sub": "12345",
+        "email": "googleuser@example.com",
+        "given_name": "Google",
+        "family_name": "User"
+    }
+    
+    response = client.post(
+        "/api/v1/auth/google",
+        json={"token": "fake-jwt-token"}
+    )
+    
+    assert response.status_code == 428
+    assert response.json()["error"]["code"] == "PRECONDITION_REQUIRED"
+
+
+@patch("app.services.auth.id_token.verify_oauth2_token")
+def test_google_login_new_user_with_phone_creates_account(mock_verify, client):
+    mock_verify.return_value = {
+        "sub": "123456",
+        "email": "googleuser2@example.com",
+        "given_name": "Google",
+        "family_name": "User"
+    }
+    
+    response = client.post(
+        "/api/v1/auth/google",
+        json={"token": "fake-jwt-token", "phone": "1234567890"}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert data["user"]["email"] == "googleuser2@example.com"
+    assert data["user"]["phone"] == "1234567890"
+
+
+@patch("app.services.auth.id_token.verify_oauth2_token")
+def test_google_login_links_existing_email(mock_verify, client, db_session):
+    # First, create a regular user
+    user = User(
+        phone="0987654321",
+        email="existing@example.com",
+        hashed_password="some-hash",
+        first_name="Existing",
+        last_name="User",
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    mock_verify.return_value = {
+        "sub": "99999",
+        "email": "existing@example.com",
+        "given_name": "Existing",
+        "family_name": "User"
+    }
+    
+    response = client.post(
+        "/api/v1/auth/google",
+        json={"token": "fake-jwt-token"}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["user"]["email"] == "existing@example.com"
+    assert data["user"]["phone"] == "0987654321"
+
+    # Verify that the google_id was updated in the DB
+    db_session.refresh(user)
+    assert user.google_id == "99999"
+
+
+@patch("app.services.auth.id_token.verify_oauth2_token")
+def test_google_login_invalid_token(mock_verify, client):
+    mock_verify.side_effect = ValueError("Invalid token")
+    
+    response = client.post(
+        "/api/v1/auth/google",
+        json={"token": "invalid-token"}
+    )
+    
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "UNAUTHORIZED"

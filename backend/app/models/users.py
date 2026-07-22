@@ -8,10 +8,14 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     phone = Column(String(20), nullable=False, index=True, unique=True)
-    email = Column(String(255), nullable=True)
-    hashed_password = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=True, unique=True, index=True)
+    hashed_password = Column(String(255), nullable=True)
+    google_id = Column(String(255), unique=True, nullable=True, index=True)
     first_name = Column(String(100))
     last_name = Column(String(100))
+
+    is_email_verified = Column(Boolean, default=False)
+    verification_token = Column(String(255), nullable=True, index=True)
 
     is_active = Column(Boolean, default=True)
     

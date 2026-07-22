@@ -1,13 +1,14 @@
 import math
 from typing import Optional
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
+from fastapi import HTTPException, BackgroundTasks
 
 from app.repositories.orders import OrderRepository
 from app.repositories.coupons import CouponRepository
 from app.schemas.orders import OrderListResponse
 from app.schemas.admin_orders import AdminOrderStatusUpdate
 from app.models.orders import Order
+from app.services.email import EmailService
 
 # Valid transition map
 ALLOWED_TRANSITIONS = {
@@ -60,7 +61,7 @@ class AdminOrderService:
             raise HTTPException(status_code=404, detail="Order not found")
         return order
 
-    def update_status(self, order_id: int, payload: AdminOrderStatusUpdate) -> Order:
+    def update_status(self, order_id: int, payload: AdminOrderStatusUpdate, background_tasks: BackgroundTasks = None) -> Order:
         order = self.repo.get_by_id_admin(order_id)
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
@@ -100,5 +101,13 @@ class AdminOrderService:
                 if coupon:
                     coupon.usage_count = max(0, coupon.usage_count - 1)
                     self.db.add(coupon)
+                    
+            if background_tasks:
+                background_tasks.add_task(
+                    EmailService.send_order_cancellation_email,
+                    email=order.user.email,
+                    first_name=order.user.first_name,
+                    order_id=order.id
+                )
                     
         return self.repo.update_status(order, new_status)

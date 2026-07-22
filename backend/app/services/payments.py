@@ -4,7 +4,7 @@ import json
 from uuid import uuid4
 
 import httpx
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -19,6 +19,7 @@ from app.schemas.payments import (
     PaymentVerifyResponse,
     PaymentWebhookResponse,
 )
+from app.services.email import EmailService
 
 
 ONLINE_PAYMENT_PROVIDERS = {"razorpay", "cashfree"}
@@ -100,6 +101,7 @@ class PaymentService:
         *,
         user_id: int,
         payload: PaymentVerifyRequest,
+        background_tasks: BackgroundTasks = None,
     ) -> PaymentVerifyResponse:
         provider = self._normalize_provider(payload.provider)
         self._ensure_provider_secret(provider)
@@ -139,7 +141,7 @@ class PaymentService:
                 detail="Invalid payment signature.",
             )
 
-        self._mark_success(payment, payload.provider_payment_id)
+        self._mark_success(payment, payload.provider_payment_id, background_tasks)
         self.db.commit()
         payment = self.payments.refresh(payment)
         return PaymentVerifyResponse(
@@ -155,6 +157,7 @@ class PaymentService:
         provider: str,
         signature: str,
         raw_body: bytes,
+        background_tasks: BackgroundTasks = None,
     ) -> PaymentWebhookResponse:
         provider = self._normalize_provider(provider)
         if not self._verify_webhook_signature(
@@ -182,7 +185,7 @@ class PaymentService:
         outcome = self._extract_webhook_outcome(payload)
         provider_payment_id = self._extract_provider_payment_id(payload)
         if outcome == "success":
-            self._mark_success(payment, provider_payment_id)
+            self._mark_success(payment, provider_payment_id, background_tasks)
             self.db.commit()
         elif outcome == "failed":
             self._mark_failed(payment, provider_payment_id)
@@ -394,17 +397,29 @@ class PaymentService:
             return "failed"
         return None
 
-    def _mark_success(self, payment: Payment, provider_payment_id: str | None) -> None:
+    def _mark_success(self, payment: Payment, provider_payment_id: str | None, background_tasks: BackgroundTasks = None) -> None:
         if payment.status == "verified" and payment.order.status == "paid":
             return
         if not self._can_accept_success(payment):
             return
+            
+        was_pending = payment.order.status == "pending_payment"
+        
         if provider_payment_id:
             payment.provider_payment_id = provider_payment_id
         payment.status = "verified"
         payment.order.status = "paid"
         self.db.add(payment.order)
         self.db.add(payment)
+        
+        if was_pending and background_tasks:
+            background_tasks.add_task(
+                EmailService.send_order_success_email,
+                email=payment.order.user.email,
+                first_name=payment.order.user.first_name,
+                order_id=payment.order.id,
+                amount=payment.order.final_amount
+            )
 
     @staticmethod
     def _can_accept_success(payment: Payment) -> bool:
