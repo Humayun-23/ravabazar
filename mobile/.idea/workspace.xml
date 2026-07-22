@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="76f7345f-f80c-413d-bbe3-bd0f3b40eb9d" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../backend/app/api/v1/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/app/api/v1/auth.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/app/core/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/app/core/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/app/models/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/app/models/users.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/app/services/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/app/services/auth.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/app/(auth)/register/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/app/(auth)/register/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/app/(customer)/account/favorites/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/app/(customer)/account/favorites/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/app/(customer)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/app/(customer)/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/app/(customer)/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/app/(customer)/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/app/(customer)/products/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/app/(customer)/products/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/app/(customer)/search/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/app/(customer)/search/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/app/globals.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/components/layout/BottomNav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/components/layout/BottomNav.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/components/layout/Navbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/components/layout/Navbar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/components/products/ProductCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/components/products/ProductCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/src/components/ui/button.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/components/ui/button.tsx" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 0,
+  "fromUser": false
+}]]></component>
+  <component name="ProjectId" id="3GlBsURlgZFPhU9qaFluuEiS524" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Users/humayun/ravabazar/mobile"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="76f7345f-f80c-413d-bbe3-bd0f3b40eb9d" name="Changes" comment="" />
+      <created>1784536482857</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1784536482857</updated>
+    </task>
+    <servers />
+  </component>
+</project>

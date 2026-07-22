@@ -15,26 +15,26 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.02)]">
-      <div className="flex justify-around items-center h-16 px-2">
+    <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40 bg-primary rounded-[2rem] shadow-2xl p-2 transition-all duration-300">
+      <div className="flex justify-between items-center px-4">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          const isActive = pathname === item.href || (
+            item.href !== '/' && 
+            pathname.startsWith(item.href) && 
+            !navItems.some(other => other.href !== item.href && other.href !== '/' && pathname.startsWith(other.href) && other.href.length > item.href.length)
+          );
           const Icon = item.icon;
           
           return (
             <Link 
               key={item.name} 
               href={item.href}
-              className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200 ${
-                isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+              className={`flex items-center justify-center p-3 rounded-full transition-all duration-300 ${
+                isActive ? 'bg-primary-foreground text-primary' : 'text-primary-foreground/70 hover:text-primary-foreground'
               }`}
             >
-              <div className="relative p-1">
-                <Icon className={`w-6 h-6 transition-transform ${isActive ? 'scale-110' : ''}`} strokeWidth={isActive ? 2.5 : 2} />
-              </div>
-              <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-medium'}`}>
-                {item.name}
-              </span>
+              <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
+              <span className="sr-only">{item.name}</span>
             </Link>
           );
         })}

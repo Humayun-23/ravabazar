@@ -1,5 +1,10 @@
 {
   "appId": "com.ravabazar.app",
   "appName": "Ravabazar",
-  "webDir": "../../frontend/out"
+  "webDir": "../../frontend/out",
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false
+    }
+  }
 }

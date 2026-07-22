@@ -9,36 +9,38 @@ import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
+  priority?: boolean;
 }
 
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%2364748b'%3ENo Image%3C/text%3E%3C/svg%3E";
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { toggleWishlist, isInWishlist } = useWishlistStore();
   const isWished = isInWishlist(product.id);
 
   return (
-    <Link href={`/products/${product.slug}`} className="group flex flex-col h-full">
-      <div className="relative aspect-[4/5] bg-[#f3f4f6] rounded-2xl overflow-hidden mb-3">
+    <Link href={`/products/${product.slug}`} className="group flex flex-col h-full bg-white rounded-3xl p-3 pb-4 shadow-sm border border-gray-100 transition-all hover:shadow-md">
+      <div className="relative aspect-square rounded-2xl overflow-hidden mb-3 bg-gray-50/50">
         <Image
           src={product.primary_image?.image_url || PLACEHOLDER_IMAGE}
           alt={product.primary_image?.alt_text || product.name}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-contain p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+          priority={priority}
         />
         
         {/* Floating Action / Favorite Button */}
         <Button 
           variant="secondary" 
           size="icon" 
-          className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/20 hover:bg-black/40 text-white backdrop-blur-sm border-none shadow-none z-10"
+          className="absolute top-2 right-2 h-7 w-7 rounded-full bg-white text-muted-foreground shadow-sm hover:bg-white hover:scale-110 transition-transform z-10"
           onClick={(e) => {
             e.preventDefault();
             toggleWishlist(product.id);
           }}
         >
-          <Heart className={cn("w-4 h-4 transition-colors", isWished ? "fill-red-500 text-red-500" : "")} />
+          <Heart className={cn("w-3.5 h-3.5 transition-colors", isWished ? "fill-red-500 text-red-500" : "")} />
         </Button>
 
         {product.available_stock === 0 && (
@@ -54,19 +56,18 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
       </div>
       
-      <div className="flex flex-col flex-1 text-center px-1">
-        <h3 className="font-bold text-[15px] leading-tight line-clamp-1 mb-0.5 text-foreground">
+      <div className="flex flex-col flex-1 px-1 mt-1">
+        <h3 className="font-bold text-[13px] leading-tight line-clamp-1 mb-1 text-foreground">
           {product.name}
         </h3>
-        <p className="text-xs font-medium text-muted-foreground mb-1.5">{product.category.name}</p>
-        <div className="mt-auto">
+        <div className="mt-auto flex items-center justify-between">
           {product.sale_price ? (
-            <div className="flex items-center justify-center gap-2">
-              <span className="font-extrabold text-[15px]">₹{product.sale_price.toFixed(2)}</span>
-              <span className="text-[11px] text-muted-foreground line-through font-medium">₹{product.price.toFixed(2)}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-extrabold text-[14px]">₹{product.sale_price.toFixed(2)}</span>
+              <span className="text-[10px] text-muted-foreground line-through font-medium">₹{product.price.toFixed(2)}</span>
             </div>
           ) : (
-            <span className="font-extrabold text-[15px]">₹{product.price.toFixed(2)}</span>
+            <span className="font-extrabold text-[14px]">₹{product.price.toFixed(2)}</span>
           )}
         </div>
       </div>

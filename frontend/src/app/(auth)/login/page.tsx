@@ -1,15 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { fetchApi } from '@/services/api';
-import { useUserStore } from '@/store/userStore';
-import { useRouter } from 'next/navigation';
+import { fetchApi, authApi } from '@/services/api';
+import { GoogleLogin } from '@react-oauth/google';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Phone, Lock, LogIn } from 'lucide-react';
 import { getErrorMessage } from '@/lib/errors';
+import { useAuthSuccess } from '@/lib/auth-helpers';
 
 export default function LoginPage() {
   const [phone, setPhone] = useState('');
@@ -17,8 +17,27 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const setUser = useUserStore(state => state.setUser);
-  const router = useRouter();
+  const { handleLoginSuccess } = useAuthSuccess();
+  const [pendingGoogleToken, setPendingGoogleToken] = useState<string | null>(null);
+
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return;
+    setError('');
+    setLoading(true);
+    try {
+      const response = await authApi.googleLogin({ token: credentialResponse.credential });
+      await handleLoginSuccess(response);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('Phone number is required')) {
+        setPendingGoogleToken(credentialResponse.credential);
+        setError('Please provide your phone number to complete registration.');
+      } else {
+        setError(getErrorMessage(err, 'Failed to login with Google'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,32 +45,15 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetchApi('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ phone, password }),
-      });
-
-      if (response.access_token) {
-        localStorage.setItem('access_token', response.access_token);
-        if (response.refresh_token) {
-          localStorage.setItem('refresh_token', response.refresh_token);
-        }
-        setUser(response.user);
-
-        // Merge guest cart if exists
-        const guestSession = localStorage.getItem('guest_session');
-        if (guestSession) {
-          try {
-            await fetchApi('/cart/merge', {
-              method: 'POST',
-              body: JSON.stringify({ session_id: guestSession }),
-            });
-          } catch (e) {
-            console.error('Failed to merge cart', e);
-          }
-        }
-
-        router.push('/account');
+      if (pendingGoogleToken) {
+        const response = await authApi.googleLogin({ token: pendingGoogleToken, phone });
+        await handleLoginSuccess(response);
+      } else {
+        const response = await fetchApi('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ phone, password }),
+        });
+        await handleLoginSuccess(response);
       }
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to login'));
@@ -99,29 +101,56 @@ export default function LoginPage() {
             </div>
           </div>
           
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Password</Label>
-            <div className="relative flex items-center group">
-              <div className="absolute left-3.5 text-muted-foreground group-focus-within:text-primary transition-colors">
-                <Lock className="w-5 h-5" />
+          {!pendingGoogleToken && (
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Password</Label>
+              <div className="relative flex items-center group">
+                <div className="absolute left-3.5 text-muted-foreground group-focus-within:text-primary transition-colors">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="pl-11 h-12 rounded-xl bg-muted/50 border-transparent focus-visible:bg-transparent focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 text-base"
+                />
               </div>
-              <Input 
-                id="password" 
-                type="password" 
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                className="pl-11 h-12 rounded-xl bg-muted/50 border-transparent focus-visible:bg-transparent focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 text-base"
-              />
             </div>
-          </div>
+          )}
 
           <Button type="submit" className="w-full h-12 rounded-xl text-base font-bold shadow-lg shadow-primary/20 mt-2" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Processing...' : pendingGoogleToken ? 'Complete Registration' : 'Sign In'}
           </Button>
         </form>
+
+        {!pendingGoogleToken && (
+          <>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-muted"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center w-full">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                  setError('Google Login Failed');
+                }}
+                theme="outline"
+                size="large"
+                shape="rectangular"
+              />
+            </div>
+          </>
+        )}
 
         <div className="mt-8 pt-6 border-t text-center text-sm font-medium text-muted-foreground">
           Don&apos;t have an account?{' '}

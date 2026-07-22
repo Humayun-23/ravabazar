@@ -35,3 +35,5 @@ Planned tables:
   debugging and webhook reconciliation.
 - Customer carts are unique per non-null `user_id`; guest carts are unique per
   non-null `session_id`; cart items are unique by `(cart_id, product_id)`.
+- `users` table has `google_id` (nullable) to support Google Authentication.
+  `hashed_password` is nullable for Google users, but `phone` remains a mandatory requirement.

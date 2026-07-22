@@ -5,6 +5,16 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1
 type ApiParam = string | number | boolean | null | undefined;
 type ApiPayload = Record<string, unknown>;
 
+export function buildQueryString(params: Record<string, ApiParam> = {}): string {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.append(key, value.toString());
+    }
+  });
+  return searchParams.toString();
+}
+
 export interface PaymentClientPayload {
   key: string;
   order_id: string;
@@ -58,6 +68,15 @@ export const paymentApi = {
   },
 };
 
+export const authApi = {
+  googleLogin: async (payload: { token: string; phone?: string }) => {
+    return fetchApi('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+};
+
 export const adminApi = {
   login: async (credentials: AdminLoginCredentials): Promise<AdminAuthResponse> => {
     return fetchApi('/admin/auth/login', {
@@ -86,13 +105,7 @@ export const adminApi = {
   },
 
   getProducts: async (params: Record<string, ApiParam> = {}) => {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        searchParams.append(key, value.toString());
-      }
-    });
-    const qs = searchParams.toString();
+    const qs = buildQueryString(params);
     return fetchApi(`/admin/products${qs ? `?${qs}` : ''}`, {
       method: 'GET',
     });
@@ -119,26 +132,14 @@ export const adminApi = {
   },
 
   getOrders: async (params: Record<string, ApiParam> = {}) => {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        searchParams.append(key, value.toString());
-      }
-    });
-    const qs = searchParams.toString();
+    const qs = buildQueryString(params);
     return fetchApi(`/admin/orders${qs ? `?${qs}` : ''}`, {
       method: 'GET',
     });
   },
 
   getCustomers: async (params: Record<string, ApiParam> = {}) => {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        searchParams.append(key, value.toString());
-      }
-    });
-    const qs = searchParams.toString();
+    const qs = buildQueryString(params);
     return fetchApi(`/admin/customers${qs ? `?${qs}` : ''}`, {
       method: 'GET',
     });
@@ -203,13 +204,7 @@ export const adminApi = {
   },
 
   getCoupons: async (params: Record<string, ApiParam> = {}) => {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        searchParams.append(key, value.toString());
-      }
-    });
-    const qs = searchParams.toString();
+    const qs = buildQueryString(params);
     return fetchApi(`/admin/coupons${qs ? `?${qs}` : ''}`, {
       method: 'GET',
     });

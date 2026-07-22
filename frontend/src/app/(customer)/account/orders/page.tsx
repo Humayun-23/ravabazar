@@ -48,11 +48,11 @@ function getStatusUI(status: string) {
     case 'pending_payment':
     case 'cod_pending':
       return {
-        color: 'text-yellow-500',
-        bg: 'bg-yellow-500/10',
+        color: 'text-amber-500',
+        bg: 'bg-amber-500/10',
         icon: <AlertCircle className="w-5 h-5" />,
         label: 'Payment Pending',
-        bar: 'bg-yellow-500'
+        bar: 'bg-amber-500'
       };
     default:
       return {

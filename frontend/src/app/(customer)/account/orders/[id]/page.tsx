@@ -20,7 +20,7 @@ function getStatusColor(status: string) {
       return 'bg-destructive hover:bg-destructive/90';
     case 'pending_payment':
     case 'cod_pending':
-      return 'bg-yellow-500 hover:bg-yellow-600';
+      return 'bg-amber-500 hover:bg-amber-600';
     default:
       return 'bg-blue-500 hover:bg-blue-600';
   }

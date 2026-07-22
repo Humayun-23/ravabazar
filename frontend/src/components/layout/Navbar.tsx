@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Search } from 'lucide-react';
+import { ShoppingCart, User, Search, MapPin, ChevronDown, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
@@ -23,37 +23,26 @@ export function Navbar() {
   }, [user, fetchWishlist]);
   
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 transition-all duration-300 pt-[env(safe-area-inset-top)]">
       <div className="container flex h-16 items-center justify-between px-4 md:px-8 mx-auto">
-        {/* Mobile Header (Kutuku Style) */}
-        <div className="flex md:hidden items-center gap-3 w-full">
-          <Link href="/account" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-            <User className="w-6 h-6 text-muted-foreground" />
-          </Link>
-          <Link href="/account" className="flex flex-col flex-1">
-            <span className="text-sm font-bold leading-tight line-clamp-1">
-              Hi, {user?.first_name || 'Guest'}
-            </span>
-            <span className="text-xs text-muted-foreground">Let&apos;s go shopping</span>
-          </Link>
-          <div className="flex items-center gap-1 shrink-0">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 rounded-full"
-              render={<Link href="/search" />}
-              nativeButton={false}
-            >
-              <Search className="h-5 w-5" />
+        {/* Mobile Header (Design Style) */}
+        <div className="flex md:hidden items-center justify-between w-full">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-muted-foreground font-medium mb-0.5">Location</span>
+            <div className="flex items-center gap-1 text-foreground">
+              <MapPin className="w-4 h-4 text-primary" />
+              <span className="text-sm font-bold">New York, USA</span>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full bg-muted/50">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-primary"></span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={toggleCart} className="relative h-8 w-8 rounded-full">
-              <ShoppingCart className="h-5 w-5" />
-              {itemCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground">
-                  {itemCount > 99 ? '99+' : itemCount}
-                </span>
-              )}
-            </Button>
+            <Link href="/account" className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center shrink-0 hover:bg-muted transition-colors">
+              <User className="w-5 h-5 text-muted-foreground" />
+            </Link>
           </div>
         </div>
 

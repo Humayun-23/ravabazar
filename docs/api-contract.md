@@ -272,6 +272,28 @@ Invalidate the current customer refresh token.
 
 Response `204`: empty body.
 
+### `POST /api/v1/auth/google`
+
+Login or register a customer using a Google ID token.
+
+Request:
+
+```json
+{
+  "token": "eyJhbG...",
+  "phone": "9999999999" // Optional, required if the user does not exist
+}
+```
+
+Response `200`: same user shape as register/login response, along with `access_token` and `refresh_token`.
+
+Response `428 Precondition Required`:
+```json
+{
+  "detail": "Phone number is required to complete registration."
+}
+```
+
 ### `GET /api/v1/auth/me`
 
 Return the current authenticated customer.
