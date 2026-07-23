@@ -8,6 +8,7 @@ from app.schemas.auth import (
     AdminLoginRequest,
     RefreshTokenRequest,
 )
+from app.schemas.admins import AdminPasswordUpdate
 from app.services.auth import AuthService
 
 router = APIRouter()
@@ -47,4 +48,17 @@ def logout_admin(
         subject_id=current_admin.id,
     )
     response.status_code = status.HTTP_204_NO_CONTENT
+    return None
+
+@router.post("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: AdminPasswordUpdate,
+    current_admin=Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    AuthService(db).change_admin_password(
+        admin_id=current_admin.id,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+    )
     return None

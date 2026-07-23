@@ -84,18 +84,20 @@ class AuthService:
                 detail="OTP verification is currently disabled.",
             )
             
-        import random
+        import secrets
         from datetime import datetime, timedelta
         from app.models.otp import OTPVerification
         from app.services.sms import SmsService
         
+        phone = phone.strip()
+
         # Invalidate old OTPs for this phone
         self.db.query(OTPVerification).filter(
             OTPVerification.phone == phone,
             OTPVerification.is_used == False
-        ).update({"is_used": True})
+        ).update({"is_used": True}, synchronize_session=False)
         
-        otp_code = f"{random.randint(100000, 999999)}"
+        otp_code = f"{secrets.randbelow(900000) + 100000}"
         expires_at = datetime.utcnow() + timedelta(minutes=5)
         
         otp_record = OTPVerification(
@@ -118,6 +120,9 @@ class AuthService:
         from datetime import datetime
         from app.models.otp import OTPVerification
         
+        phone = phone.strip()
+        otp = otp.strip()
+
         otp_record = self.db.query(OTPVerification).filter(
             OTPVerification.phone == phone,
             OTPVerification.otp_code == otp,
@@ -245,6 +250,16 @@ class AuthService:
                 detail="Admin account is inactive.",
             )
         return admin
+
+    def change_admin_password(self, admin_id: int, current_password: str, new_password: str) -> None:
+        admin = self.admins.get_by_id(admin_id)
+        if not admin or not verify_password(current_password, admin.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid current password.",
+            )
+        admin.hashed_password = hash_password(new_password)
+        self.db.commit()
 
     def create_token_pair(self, *, subject_id: int, subject_type: str) -> dict:
         access_token, _, _ = create_access_token(subject_id, subject_type)

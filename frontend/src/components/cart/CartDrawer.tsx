@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Trash2, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -15,6 +16,8 @@ import {
 } from '@/components/ui/sheet';
 import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
+
+const FREE_SHIPPING_THRESHOLD = 999;
 
 const PLACEHOLDER_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%2364748b'%3ENo Image%3C/text%3E%3C/svg%3E";
@@ -49,6 +52,32 @@ export function CartDrawer() {
         <SheetHeader className="border-b px-5 py-4">
           <SheetTitle>Your Cart</SheetTitle>
         </SheetHeader>
+
+        {/* Free Shipping Progress Bar */}
+        {items.length > 0 && (
+          <div className="bg-primary/10 px-5 py-3 border-b border-primary/20">
+            <div className="flex justify-between items-center text-xs font-semibold mb-1.5">
+              {subtotal >= FREE_SHIPPING_THRESHOLD ? (
+                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-bold">
+                  <Sparkles className="w-3.5 h-3.5" /> 🎉 You&apos;ve unlocked FREE Delivery!
+                </span>
+              ) : (
+                <span>
+                  Add <strong className="text-foreground font-bold">{formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)}</strong> more for <span className="text-emerald-600 dark:text-emerald-400 font-bold">FREE Delivery</span>
+                </span>
+              )}
+              <span className="text-muted-foreground">{Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100))}%</span>
+            </div>
+            <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+              <motion.div
+                className="bg-primary h-full rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+        )}
 
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6 text-center py-16">

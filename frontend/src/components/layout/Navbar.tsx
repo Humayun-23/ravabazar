@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ShoppingCart, User, Search, MapPin, ChevronDown, Bell, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 import {
   Dialog,
   DialogContent,
@@ -227,8 +228,8 @@ export function Navbar() {
                 </div>
               </PopoverContent>
             </Popover>
-            <Link href="/account" className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center shrink-0 hover:bg-muted transition-colors">
-              <User className="w-5 h-5 text-muted-foreground" />
+            <Link href="/search" className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center shrink-0 hover:bg-muted transition-colors" aria-label="Search">
+              <Search className="w-5 h-5 text-muted-foreground" />
             </Link>
           </div>
         </div>
@@ -272,9 +273,15 @@ export function Navbar() {
           <Button variant="ghost" size="icon" onClick={toggleCart} className="relative">
             <ShoppingCart className="h-5 w-5" />
             {itemCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground">
+              <motion.span
+                key={itemCount}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: [1, 1.3, 1], opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground font-bold shadow-sm"
+              >
                 {itemCount > 99 ? '99+' : itemCount}
-              </span>
+              </motion.span>
             )}
             <span className="sr-only">Cart</span>
           </Button>

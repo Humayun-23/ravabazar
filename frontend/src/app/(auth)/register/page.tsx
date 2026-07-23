@@ -235,11 +235,13 @@ export default function RegisterPage() {
           </>
         )}
 
-        <div className="mt-8 pt-6 border-t text-center text-sm font-medium text-muted-foreground">
-          Already have an account?{' '}
-          <Link href="/login" className="font-bold text-primary hover:underline">
-            Sign in
-          </Link>
+        <div className="mt-8 pt-6 border-t text-center text-sm font-medium text-muted-foreground space-y-2">
+          <div>
+            Already have an account or want instant access?{' '}
+            <Link href="/login" className="font-bold text-primary hover:underline">
+              Sign in with OTP / Password
+            </Link>
+          </div>
         </div>
       </div>
     </div>

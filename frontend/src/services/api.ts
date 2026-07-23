@@ -75,6 +75,18 @@ export const authApi = {
       body: JSON.stringify(payload),
     });
   },
+  requestOtp: async (phone: string) => {
+    return fetchApi('/auth/request-otp', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    });
+  },
+  verifyOtp: async (payload: { phone: string; otp: string }) => {
+    return fetchApi('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
 };
 
 export const adminApi = {
@@ -234,6 +246,13 @@ export const adminApi = {
   deleteReview: async (id: number) => {
     return fetchApi(`/admin/reviews/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  changePassword: async (data: ApiPayload) => {
+    return fetchApi('/admin/me/password', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   },
 };

@@ -11,6 +11,7 @@ from app.main import app
 from app.models.admins import Admin
 from app.models.refresh_tokens import RefreshToken
 from app.models.users import User
+from app.models.otp import OTPVerification
 
 
 @pytest.fixture()
@@ -23,6 +24,7 @@ def db_session():
     User.__table__.create(bind=engine)
     Admin.__table__.create(bind=engine)
     RefreshToken.__table__.create(bind=engine)
+    OTPVerification.__table__.create(bind=engine)
 
     TestingSessionLocal = sessionmaker(
         autocommit=False,
@@ -34,6 +36,7 @@ def db_session():
         yield session
     finally:
         session.close()
+        OTPVerification.__table__.drop(bind=engine)
         RefreshToken.__table__.drop(bind=engine)
         Admin.__table__.drop(bind=engine)
         User.__table__.drop(bind=engine)
@@ -311,3 +314,34 @@ def test_google_login_invalid_token(mock_verify, client):
     
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "UNAUTHORIZED"
+
+
+@patch("app.services.auth.settings.ENABLE_MOBILE_OTP_VERIFICATION", True)
+def test_mobile_otp_request_and_verify(client, db_session):
+    # 1. Request OTP
+    req_response = client.post("/api/v1/auth/request-otp", json={"phone": "9876543210"})
+    assert req_response.status_code == 200
+    assert req_response.json()["message"] == "OTP sent successfully"
+
+    # Fetch OTP from DB to simulate user receiving code
+    otp_record = db_session.query(OTPVerification).filter(OTPVerification.phone == "9876543210").first()
+    assert otp_record is not None
+    assert otp_record.otp_code
+
+    # 2. Verify invalid OTP
+    invalid_verify = client.post("/api/v1/auth/verify-otp", json={"phone": "9876543210", "otp": "000000"})
+    assert invalid_verify.status_code == 401
+
+    # 3. Verify valid OTP (should auto-create customer and return tokens)
+    valid_verify = client.post("/api/v1/auth/verify-otp", json={"phone": "9876543210", "otp": otp_record.otp_code})
+    assert valid_verify.status_code == 200
+    data = valid_verify.json()
+    assert "access_token" in data
+    assert data["user"]["phone"] == "9876543210"
+
+
+def test_mobile_otp_disabled_returns_400(client):
+    req_response = client.post("/api/v1/auth/request-otp", json={"phone": "9876543210"})
+    assert req_response.status_code == 400
+
+

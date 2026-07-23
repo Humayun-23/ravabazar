@@ -15,6 +15,7 @@ const ADMIN_LINKS = [
   { name: 'Reviews', href: '/admin/reviews', icon: '⭐' },
   { name: 'Banners', href: '/admin/banners', icon: '🖼️' },
   { name: 'Coupons', href: '/admin/coupons', icon: '🎟️' },
+  { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

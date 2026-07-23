@@ -20,6 +20,10 @@ class AdminUpdate(BaseModel):
     is_active: Optional[bool] = None
     password: Optional[str] = None
 
+class AdminPasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str
+
 class AdminInDBBase(AdminBase):
     id: int
     created_at: datetime
