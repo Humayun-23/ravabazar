@@ -45,7 +45,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       queryClient.invalidateQueries({ queryKey: ['product-reviews', productId] });
       queryClient.invalidateQueries({ queryKey: ['product'] });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       setSuccessMsg('');
       setErrorMsg(err.message || 'Failed to submit review');
     }

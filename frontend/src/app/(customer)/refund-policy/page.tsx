@@ -34,9 +34,9 @@ export default function RefundPolicyPage() {
 
         <h2 className="text-2xl font-semibold text-foreground mt-8">4. Late or Missing Refunds</h2>
         <p>
-          If you haven't received a refund yet, first check your bank account again. Then contact your credit card company; 
+          If you haven&apos;t received a refund yet, first check your bank account again. Then contact your credit card company; 
           it may take some time before your refund is officially posted. Next, contact your bank. There is often some 
-          processing time before a refund is posted. If you've done all of this and you still have not received your refund, 
+          processing time before a refund is posted. If you&apos;ve done all of this and you still have not received your refund, 
           please contact us.
         </p>
 

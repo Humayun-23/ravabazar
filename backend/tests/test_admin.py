@@ -12,6 +12,7 @@ from app.models.product_images import ProductImage
 from app.models.categories import Category
 from app.models.inventory import Inventory
 from app.models.admins import Admin
+from app.models.product_reviews import ProductReview
 
 @pytest.fixture()
 def db_session():
@@ -26,6 +27,8 @@ def db_session():
     ProductImage.__table__.create(bind=engine)
     Inventory.__table__.create(bind=engine)
 
+    ProductReview.__table__.create(bind=engine)
+
     TestingSessionLocal = sessionmaker(
         autocommit=False,
         autoflush=False,
@@ -36,6 +39,7 @@ def db_session():
         yield session
     finally:
         session.close()
+        ProductReview.__table__.drop(bind=engine)
         Inventory.__table__.drop(bind=engine)
         ProductImage.__table__.drop(bind=engine)
         Product.__table__.drop(bind=engine)

@@ -11,15 +11,12 @@ import { getErrorMessage } from '@/lib/errors';
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  const router = useRouter();
 
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('Verifying your email address...');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>(token ? 'loading' : 'error');
+  const [message, setMessage] = useState(token ? 'Verifying your email address...' : 'Invalid or missing verification token.');
 
   useEffect(() => {
     if (!token) {
-      setStatus('error');
-      setMessage('Invalid or missing verification token.');
       return;
     }
 

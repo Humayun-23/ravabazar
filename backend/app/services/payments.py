@@ -412,7 +412,7 @@ class PaymentService:
         self.db.add(payment.order)
         self.db.add(payment)
         
-        if was_pending and background_tasks:
+        if was_pending and background_tasks and payment.order.user.email:
             background_tasks.add_task(
                 EmailService.send_order_success_email,
                 email=payment.order.user.email,

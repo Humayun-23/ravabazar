@@ -49,7 +49,7 @@ export const requestForToken = async () => {
   }
 };
 
-export const onMessageListener = (callback: (payload: any) => void) => {
+export const onMessageListener = (callback: (payload: unknown) => void) => {
   isSupported().then((supported) => {
     if (supported) {
       const messaging = getMessaging(app);

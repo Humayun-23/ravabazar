@@ -5,7 +5,7 @@ export async function generateStaticParams() {
     if (res.ok) {
       const data = await res.json();
       if (data && data.items && Array.isArray(data.items)) {
-        return data.items.map((product: any) => ({
+        return data.items.map((product: { id: number | string }) => ({
           id: product.id.toString(),
         }));
       }

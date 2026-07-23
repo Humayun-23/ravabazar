@@ -205,7 +205,7 @@ class OrderService:
         
         order_refreshed = self.orders.refresh_detail(order)
         
-        if payment_method == "cod" and background_tasks:
+        if payment_method == "cod" and background_tasks and order_refreshed.user.email:
             background_tasks.add_task(
                 EmailService.send_order_success_email,
                 email=order_refreshed.user.email,
@@ -275,7 +275,7 @@ class OrderService:
         self.db.commit()
         
         order_refreshed = self.orders.refresh_detail(order)
-        if background_tasks:
+        if background_tasks and order_refreshed.user.email:
             background_tasks.add_task(
                 EmailService.send_order_cancellation_email,
                 email=order_refreshed.user.email,

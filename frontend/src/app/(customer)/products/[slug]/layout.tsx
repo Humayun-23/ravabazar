@@ -11,10 +11,10 @@ export async function generateStaticParams() {
     }
     
     const data = await res.json();
-    if (data && data.items && Array.isArray(data.items)) {
-      return data.items.map((product: any) => ({
-        slug: product.slug,
-      }));
+      if (data && data.items && Array.isArray(data.items)) {
+        return data.items.map((product: { slug: string }) => ({
+          slug: product.slug,
+        }));
     }
   } catch (error) {
     console.warn('Error fetching products during build, using fallback list', error);
