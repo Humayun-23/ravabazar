@@ -34,7 +34,7 @@ api_router.include_router(admin_coupons.router, prefix="/admin/coupons", tags=["
 api_router.include_router(admin_banners.router, prefix="/admin/banners", tags=["admin-banners"])
 api_router.include_router(admin_settings.router, prefix="/admin/settings", tags=["admin-settings"])
 api_router.include_router(admin_inventory.router, prefix="/admin/inventory", tags=["admin-inventory"])
-api_router.include_router(shiprocket_webhooks.router, prefix="/shiprocket", tags=["shiprocket"])
+api_router.include_router(shiprocket_webhooks.router, prefix="/logistics", tags=["shiprocket"])
 api_router.include_router(banners.router, prefix="/banners", tags=["banners"])
 api_router.include_router(wishlists.router, prefix="/wishlists", tags=["wishlists"])
 api_router.include_router(notifications.router, tags=["notifications"])
