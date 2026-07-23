@@ -32,6 +32,8 @@ export interface Product {
   primary_image?: ProductImage;
   images?: ProductImage[];
   available_stock: number;
+  average_rating?: number;
+  review_count?: number;
 }
 
 export interface PaginatedResponse<T> {

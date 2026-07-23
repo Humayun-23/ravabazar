@@ -1439,6 +1439,50 @@ Response `201`:
 }
 ```
 
+## Product Reviews
+
+### `GET /api/v1/products/{product_id}/reviews`
+
+List reviews for a product.
+
+Query parameters:
+- `page`
+- `page_size`
+
+Response `200`: paginated reviews envelope.
+
+### `POST /api/v1/products/{product_id}/reviews`
+
+Protected customer endpoint to add a review. Requires a verified purchase of the product.
+
+Request:
+
+```json
+{
+  "rating": 5,
+  "comment": "Great product!"
+}
+```
+
+Response `201`: created review.
+
+### `GET /api/v1/admin/reviews`
+
+Protected admin endpoint to list all reviews.
+
+Query parameters:
+- `page`
+- `page_size`
+- `product_id`
+
+Response `200`: paginated reviews envelope.
+
+### `DELETE /api/v1/admin/reviews/{id}`
+
+Protected admin endpoint to delete a review.
+
+Response `204`: empty body.
+
 ## Backend Safety Rules
 
 ```text

@@ -17,6 +17,7 @@ Planned tables:
 * banners
 * settings
 * audit_logs
+* product_reviews
 
 ## Notes
 - **SKU** is stored on `products`.
