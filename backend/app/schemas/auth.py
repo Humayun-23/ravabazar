@@ -20,6 +20,15 @@ class AdminLoginRequest(BaseModel):
     password: str
 
 
+class RequestOTPRequest(BaseModel):
+    phone: str = Field(..., max_length=20)
+
+
+class VerifyOTPRequest(BaseModel):
+    phone: str = Field(..., max_length=20)
+    otp: str = Field(..., min_length=4, max_length=10)
+
+
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
 

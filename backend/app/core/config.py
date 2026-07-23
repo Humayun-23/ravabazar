@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     MAIL_SSL_TLS: bool = False
     
     MAILTRAP_API_TOKEN: str = ""
+    FIREBASE_CREDENTIALS: str = ""
+
+    ENABLE_MOBILE_OTP_VERIFICATION: bool = False
+    SMS_PROVIDER_ACCOUNT_ID: str = ""
+    SMS_PROVIDER_AUTH_TOKEN: str = ""
+    SMS_PROVIDER_SENDER_ID: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:

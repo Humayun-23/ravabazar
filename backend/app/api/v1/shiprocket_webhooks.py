@@ -12,11 +12,15 @@ async def shiprocket_webhook(
     request: Request,
     x_shiprocket_signature: str | None = Header(None, alias="X-Shiprocket-Signature"),
     x_shiprocket_webhook_secret: str | None = Header(None, alias="X-Shiprocket-Webhook-Secret"),
+    x_api_key: str | None = Header(None, alias="x-api-key"),
     db: Session = Depends(get_db),
 ):
     raw_body = await request.body()
+    # Use whatever token was provided
+    token = x_shiprocket_webhook_secret or x_api_key
+    
     return ShiprocketWebhookService(db).handle(
         raw_body=raw_body,
         signature=x_shiprocket_signature,
-        token=x_shiprocket_webhook_secret,
+        token=token,
     )

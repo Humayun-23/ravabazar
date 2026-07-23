@@ -88,6 +88,8 @@ class ProductPublic(BaseModel):
     category: Optional[CategoryBasic] = None
     primary_image: Optional[ProductImageBasic] = None
     available_stock: int
+    average_rating: float = 0.0
+    review_count: int = 0
 
     class Config:
         from_attributes = True
@@ -112,6 +114,8 @@ class ProductDetailPublic(BaseModel):
     category: Optional[CategoryBasic] = None
     images: List[ProductImageBasic] = []
     available_stock: int
+    average_rating: float = 0.0
+    review_count: int = 0
     created_at: datetime
     updated_at: datetime
 

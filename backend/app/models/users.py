@@ -26,4 +26,7 @@ class User(Base):
     orders = relationship("Order", back_populates="user")
     carts = relationship("Cart", back_populates="user")
     wishlists = relationship("Wishlist", back_populates="user", cascade="all, delete-orphan")
+    device_tokens = relationship("DeviceToken", back_populates="user", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    reviews = relationship("ProductReview", back_populates="user", cascade="all, delete-orphan")
 

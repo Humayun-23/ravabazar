@@ -8,6 +8,8 @@ from app.schemas.auth import (
     CustomerLoginRequest,
     GoogleLoginRequest,
     RefreshTokenRequest,
+    RequestOTPRequest,
+    VerifyOTPRequest,
 )
 from app.schemas.users import User, UserCreate
 from app.services.auth import AuthService
@@ -47,6 +49,22 @@ def login_google(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
     user = service.authenticate_google(payload)
     tokens = service.create_token_pair(subject_id=user.id, subject_type="customer")
     return {**tokens, "user": user}
+@router.post("/request-otp")
+def request_otp(payload: RequestOTPRequest, db: Session = Depends(get_db)):
+    service = AuthService(db)
+    success = service.request_otp(payload.phone)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to send OTP. Please try again.")
+    return {"message": "OTP sent successfully"}
+
+
+@router.post("/verify-otp", response_model=CustomerAuthResponse)
+def verify_otp_login(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
+    service = AuthService(db)
+    user = service.verify_otp_login(payload.phone, payload.otp)
+    tokens = service.create_token_pair(subject_id=user.id, subject_type="customer")
+    return {**tokens, "user": user}
+
 
 
 

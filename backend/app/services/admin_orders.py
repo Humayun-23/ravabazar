@@ -110,4 +110,28 @@ class AdminOrderService:
                     order_id=order.id
                 )
                     
-        return self.repo.update_status(order, new_status)
+        updated_order = self.repo.update_status(order, new_status)
+        
+        # Send Push Notification
+        from app.services.notification_service import NotificationService
+        notif_svc = NotificationService(self.db)
+        if background_tasks:
+            background_tasks.add_task(
+                notif_svc.send_push_notification,
+                user_id=order.user_id,
+                title="Order Status Updated",
+                body=f"Your order #{order.id} is now {new_status}.",
+                notification_type="order_status",
+                related_id=order.id
+            )
+        else:
+            notif_svc.send_push_notification(
+                user_id=order.user_id,
+                title="Order Status Updated",
+                body=f"Your order #{order.id} is now {new_status}.",
+                notification_type="order_status",
+                related_id=order.id
+            )
+
+        return updated_order
+

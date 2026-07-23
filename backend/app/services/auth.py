@@ -77,6 +77,83 @@ class AuthService:
             )
         return user
 
+    def request_otp(self, phone: str) -> bool:
+        if not settings.ENABLE_MOBILE_OTP_VERIFICATION:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="OTP verification is currently disabled.",
+            )
+            
+        import random
+        from datetime import datetime, timedelta
+        from app.models.otp import OTPVerification
+        from app.services.sms import SmsService
+        
+        # Invalidate old OTPs for this phone
+        self.db.query(OTPVerification).filter(
+            OTPVerification.phone == phone,
+            OTPVerification.is_used == False
+        ).update({"is_used": True})
+        
+        otp_code = f"{random.randint(100000, 999999)}"
+        expires_at = datetime.utcnow() + timedelta(minutes=5)
+        
+        otp_record = OTPVerification(
+            phone=phone,
+            otp_code=otp_code,
+            expires_at=expires_at
+        )
+        self.db.add(otp_record)
+        self.db.commit()
+        
+        return SmsService.send_otp(phone, otp_code)
+
+    def verify_otp_login(self, phone: str, otp: str) -> User:
+        if not settings.ENABLE_MOBILE_OTP_VERIFICATION:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="OTP verification is currently disabled.",
+            )
+            
+        from datetime import datetime
+        from app.models.otp import OTPVerification
+        
+        otp_record = self.db.query(OTPVerification).filter(
+            OTPVerification.phone == phone,
+            OTPVerification.otp_code == otp,
+            OTPVerification.is_used == False,
+            OTPVerification.expires_at > datetime.utcnow()
+        ).first()
+        
+        if not otp_record:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired OTP.",
+            )
+            
+        otp_record.is_used = True
+        
+        user = self.users.get_by_phone(phone)
+        if not user:
+            # Auto-signup
+            user = self.users.create(
+                phone=phone,
+                email=None,
+                hashed_password=None,
+                first_name="Customer",
+                last_name="",
+            )
+            user.is_email_verified = False
+            
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Customer account is inactive.",
+            )
+            
+        self.db.commit()
+        return user
+
     def authenticate_google(self, payload: GoogleLoginRequest) -> User:
         try:
             idinfo = id_token.verify_oauth2_token(
@@ -86,7 +163,8 @@ class AuthService:
             google_id = idinfo.get("sub")
             first_name = idinfo.get("given_name", "")
             last_name = idinfo.get("family_name", "")
-        except ValueError:
+        except ValueError as e:
+            print(f"Google Token Verification Error: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid Google token.",

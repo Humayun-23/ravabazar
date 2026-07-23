@@ -31,6 +31,7 @@ class Product(Base):
     category = relationship("Category", back_populates="products")
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
     inventory = relationship("Inventory", back_populates="product", uselist=False, cascade="all, delete-orphan")
+    reviews = relationship("ProductReview", back_populates="product", cascade="all, delete-orphan")
 
     @property
     def available_stock(self) -> int:

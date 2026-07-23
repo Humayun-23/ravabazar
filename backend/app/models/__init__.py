@@ -18,3 +18,7 @@ from .admins import Admin
 from .inventory import Inventory
 from .refresh_tokens import RefreshToken
 from .wishlists import Wishlist
+from .device_tokens import DeviceToken
+from .notifications import Notification
+from .otp import OTPVerification
+from .product_reviews import ProductReview

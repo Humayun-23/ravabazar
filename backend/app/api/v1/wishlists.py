@@ -9,7 +9,7 @@ from app.schemas.wishlists import WishlistItemResponse, WishlistAddRequest
 
 router = APIRouter()
 
-@router.get("/", response_model=List[WishlistItemResponse])
+@router.get("", response_model=List[WishlistItemResponse])
 def get_wishlist(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -20,7 +20,7 @@ def get_wishlist(
     wishlists = db.query(Wishlist).filter(Wishlist.user_id == current_user.id).all()
     return wishlists
 
-@router.post("/", response_model=WishlistItemResponse)
+@router.post("", response_model=WishlistItemResponse)
 def add_to_wishlist(
     *,
     db: Session = Depends(get_db),
