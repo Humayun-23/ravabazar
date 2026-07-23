@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [
-            origin.strip()
+            origin.strip().rstrip("/")
             for origin in self.CORS_ORIGINS.split(",")
             if origin.strip()
         ]
@@ -76,8 +76,16 @@ class Settings(BaseSettings):
         if self.is_production:
             if self.JWT_SECRET in {"", "change_this_secret"}:
                 raise ValueError("JWT_SECRET must be set in production")
-            if "*" in self.cors_origins_list:
+            
+            origins = self.cors_origins_list
+            if not origins:
+                raise ValueError("CORS_ORIGINS cannot be empty in production")
+            if "*" in origins:
                 raise ValueError("Wildcard CORS is not allowed in production")
+            for origin in origins:
+                if "localhost" in origin or "127.0.0.1" in origin:
+                    raise ValueError(f"Localhost origin '{origin}' is not allowed in production")
+                    
         return self
 
     model_config = SettingsConfigDict(

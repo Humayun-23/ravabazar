@@ -88,14 +88,7 @@ export function Navbar() {
       setLocationName(savedLocation);
     }
 
-    // Auto-prompt if not yet prompted
-    const hasPrompted = localStorage.getItem('locationPrompted');
-    if (!hasPrompted) {
-      const timer = setTimeout(() => {
-        setLocationDialogOpen(true);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
+    // Auto-prompt removed: user must manually click to set location
   }, []);
 
   const handleDialogChange = (open: boolean) => {
