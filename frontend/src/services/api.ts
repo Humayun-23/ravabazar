@@ -223,6 +223,35 @@ export const adminApi = {
       body: JSON.stringify(data),
     });
   },
+
+  getReviews: async (params: Record<string, ApiParam> = {}) => {
+    const qs = buildQueryString(params);
+    return fetchApi(`/admin/reviews${qs ? `?${qs}` : ''}`, {
+      method: 'GET',
+    });
+  },
+
+  deleteReview: async (id: number) => {
+    return fetchApi(`/admin/reviews/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export const reviewsApi = {
+  getProductReviews: async (productId: number, params: Record<string, ApiParam> = {}) => {
+    const qs = buildQueryString(params);
+    return fetchApi(`/products/${productId}/reviews${qs ? `?${qs}` : ''}`, {
+      method: 'GET',
+    });
+  },
+
+  addProductReview: async (productId: number, data: { rating: number; comment?: string }) => {
+    return fetchApi(`/products/${productId}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {

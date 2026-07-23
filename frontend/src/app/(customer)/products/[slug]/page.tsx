@@ -12,6 +12,7 @@ import { useWishlistStore } from '@/store/wishlistStore';
 import { cn } from '@/lib/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ProductReviews } from './ProductReviews';
 
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%2364748b'%3ENo Image%3C/text%3E%3C/svg%3E";
 
@@ -151,8 +152,8 @@ export default function ProductDetailsPage() {
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center gap-1.5">
                 <Star className="w-4 h-4 fill-[#f59e0b] text-[#f59e0b]" />
-                <span className="font-bold text-sm">4.8</span>
-                <span className="text-muted-foreground text-sm">(320 Review)</span>
+                <span className="font-bold text-sm">{product.average_rating ? product.average_rating.toFixed(1) : '0.0'}</span>
+                <span className="text-muted-foreground text-sm">({product.review_count || 0} Review)</span>
               </div>
               <div>
                 {product.available_stock > 0 ? (
@@ -201,6 +202,9 @@ export default function ProductDetailsPage() {
                 {isLoadingCart ? 'Adding...' : 'Add to Cart'}
               </Button>
             </div>
+            
+            {/* Reviews Section */}
+            <ProductReviews productId={product.id} />
           </div>
         </div>
       </div>
